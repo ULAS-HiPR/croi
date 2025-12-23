@@ -38,3 +38,11 @@ fp-info-cache
 
 # Local project settings
 *.kicad_prl
+
+#Code section:
+firmware/.pio
+firmware/.vscode/.browse.c_cpp.db*
+firmware/.vscode/c_cpp_properties.json
+firmware/.vscode/launch.json
+firmware/.vscode/ipch
+
