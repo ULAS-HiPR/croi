@@ -5,4 +5,6 @@
   (lib (name "ESQ")(type "KiCad")(uri "C:/Users/kyleo/Documents/KiCad/9.0/symbols/ESQ-110-X-X-D.kicad_sym")(options "")(descr ""))
   (lib (name "wago")(type "KiCad")(uri "C:/Users/kyleo/Documents/KiCad/9.0/symbols/Wago_2060-1452 998-404.kicad_sym")(options "")(descr ""))
   (lib (name "STM32F411CEU6")(type "KiCad")(uri "C:/Users/kyleo/Downloads/ul_STM32F411CEU6/KiCADv6/STM32F411CEU6.kicad_sym")(options "")(descr ""))
+  (lib (name "BMP390")(type "KiCad")(uri "C:/Users/kyleo/Documents/KiCad/9.0/symbols/2026-01-14_14-39-52.kicad_sym")(options "")(descr ""))
+  (lib (name "BME680")(type "KiCad")(uri "C:/Users/kyleo/Documents/KiCad/9.0/symbols/2026-01-14_15-28-30.kicad_sym")(options "")(descr ""))
 )
