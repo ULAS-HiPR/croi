@@ -1,0 +1,4 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "ESQ")(type "KiCad")(uri "C:/Users/kyleo/Documents/KiCad/9.0/footprints/footprints")(options "")(descr ""))
+)

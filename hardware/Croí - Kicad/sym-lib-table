@@ -1,0 +1,7 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "1")(type "KiCad")(uri "C:/Users/kyleo/Documents/KiCad/9.0/symbols/NUP2105LT1G.kicad_sym")(options "")(descr ""))
+  (lib (name "usb")(type "KiCad")(uri "C:/Users/kyleo/Documents/KiCad/9.0/symbols/USBLC6-2SC6.kicad_sym")(options "")(descr ""))
+  (lib (name "ESQ")(type "KiCad")(uri "C:/Users/kyleo/Documents/KiCad/9.0/symbols/ESQ-110-X-X-D.kicad_sym")(options "")(descr ""))
+  (lib (name "wago")(type "KiCad")(uri "C:/Users/kyleo/Documents/KiCad/9.0/symbols/Wago_2060-1452 998-404.kicad_sym")(options "")(descr ""))
+)
