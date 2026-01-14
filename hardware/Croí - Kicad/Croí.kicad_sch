@@ -3700,9 +3700,95 @@
 			(embedded_fonts no)
 		)
 	)
+	(junction
+		(at 93.98 64.77)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "ae0eb119-bea4-4062-9eaf-8233c91617e1")
+	)
+	(wire
+		(pts
+			(xy 151.13 64.77) (xy 93.98 64.77)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0739de61-7745-4e9e-8401-1dbec708ee82")
+	)
+	(wire
+		(pts
+			(xy 118.11 25.4) (xy 111.76 25.4)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0b659585-f6eb-4d95-9d94-cb21bc2e20e2")
+	)
+	(wire
+		(pts
+			(xy 93.98 64.77) (xy 68.58 64.77)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "5dad6a0b-75d5-4b55-9a2f-4895d5ecbdcc")
+	)
+	(wire
+		(pts
+			(xy 111.76 25.4) (xy 111.76 62.23)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "94612964-ad29-479f-88f3-1cfc50be56aa")
+	)
+	(wire
+		(pts
+			(xy 93.98 35.56) (xy 93.98 64.77)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "c8cf94a1-18be-4d5e-ab0f-b0cc65cccae1")
+	)
+	(wire
+		(pts
+			(xy 111.76 62.23) (xy 68.58 62.23)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d6329f1c-7a45-4b0e-9c51-9ee7d9db68a3")
+	)
+	(wire
+		(pts
+			(xy 151.13 35.56) (xy 151.13 64.77)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ebd56a28-d73f-47ac-9213-b070883918af")
+	)
+	(wire
+		(pts
+			(xy 118.11 35.56) (xy 93.98 35.56)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "edf99cc2-4659-4adc-b9e2-0d9866609742")
+	)
 	(symbol
 		(lib_id "ESQ:ESQ-110-X-X-D")
-		(at 212.09 60.96 0)
+		(at 184.15 46.99 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -3711,7 +3797,7 @@
 		(fields_autoplaced yes)
 		(uuid "0dab5bb0-8646-4b88-abb3-8fa6f3243fe0")
 		(property "Reference" "J2"
-			(at 212.09 43.18 0)
+			(at 184.15 29.21 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3719,7 +3805,7 @@
 			)
 		)
 		(property "Value" "ESQ-110-X-X-D"
-			(at 212.09 45.72 0)
+			(at 184.15 31.75 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3727,7 +3813,7 @@
 			)
 		)
 		(property "Footprint" "SAMTEC_ESQ-110-14-G-D"
-			(at 212.09 60.96 0)
+			(at 184.15 46.99 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3737,7 +3823,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 212.09 60.96 0)
+			(at 184.15 46.99 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3746,7 +3832,7 @@
 			)
 		)
 		(property "Description" ""
-			(at 212.09 60.96 0)
+			(at 184.15 46.99 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3755,7 +3841,7 @@
 			)
 		)
 		(property "MF" "Samtec"
-			(at 212.09 60.96 0)
+			(at 184.15 46.99 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3765,7 +3851,7 @@
 			)
 		)
 		(property "Description_1" "20 Position Elevated Socket Connector 0.100 (2.54mm) Through Hole Gold"
-			(at 212.09 60.96 0)
+			(at 184.15 46.99 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3775,7 +3861,7 @@
 			)
 		)
 		(property "Package" "None"
-			(at 212.09 60.96 0)
+			(at 184.15 46.99 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3785,7 +3871,7 @@
 			)
 		)
 		(property "Price" "None"
-			(at 212.09 60.96 0)
+			(at 184.15 46.99 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3795,7 +3881,7 @@
 			)
 		)
 		(property "Check_prices" "https://www.snapeda.com/parts/ESQ-110-14-G-D-LL/Samtec/view-part/?ref=eda"
-			(at 212.09 60.96 0)
+			(at 184.15 46.99 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3805,7 +3891,7 @@
 			)
 		)
 		(property "STANDARD" "Manufacturer Recommendations"
-			(at 212.09 60.96 0)
+			(at 184.15 46.99 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3815,7 +3901,7 @@
 			)
 		)
 		(property "PARTREV" "NA"
-			(at 212.09 60.96 0)
+			(at 184.15 46.99 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3825,7 +3911,7 @@
 			)
 		)
 		(property "SnapEDA_Link" "https://www.snapeda.com/parts/ESQ-110-14-G-D-LL/Samtec/view-part/?ref=snap"
-			(at 212.09 60.96 0)
+			(at 184.15 46.99 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3835,7 +3921,7 @@
 			)
 		)
 		(property "MP" "ESQ-110-14-G-D-LL"
-			(at 212.09 60.96 0)
+			(at 184.15 46.99 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3845,7 +3931,7 @@
 			)
 		)
 		(property "Purchase-URL" "https://www.snapeda.com/api/url_track_click_mouser/?unipart_id=3563488&manufacturer=Samtec&part_name=ESQ-110-14-G-D-LL&search_term=esq-110-14-g-d-ll"
-			(at 212.09 60.96 0)
+			(at 184.15 46.99 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3855,7 +3941,7 @@
 			)
 		)
 		(property "Availability" "In Stock"
-			(at 212.09 60.96 0)
+			(at 184.15 46.99 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3865,7 +3951,7 @@
 			)
 		)
 		(property "MANUFACTURER" "Samtec"
-			(at 212.09 60.96 0)
+			(at 184.15 46.99 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3945,7 +4031,7 @@
 	)
 	(symbol
 		(lib_id "1:NUP2105LT1G")
-		(at 66.04 109.22 0)
+		(at 101.6 135.89 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -3954,7 +4040,7 @@
 		(fields_autoplaced yes)
 		(uuid "1965edc5-0a86-4c73-80c2-e7e836596bd9")
 		(property "Reference" "U1"
-			(at 86.36 99.06 0)
+			(at 121.92 125.73 0)
 			(effects
 				(font
 					(size 1.524 1.524)
@@ -3962,7 +4048,7 @@
 			)
 		)
 		(property "Value" "NUP2105LT1G"
-			(at 86.36 101.6 0)
+			(at 121.92 128.27 0)
 			(effects
 				(font
 					(size 1.524 1.524)
@@ -3970,7 +4056,7 @@
 			)
 		)
 		(property "Footprint" "SOT-23_3L_ONS"
-			(at 66.04 109.22 0)
+			(at 101.6 135.89 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3980,7 +4066,7 @@
 			)
 		)
 		(property "Datasheet" "NUP2105LT1G"
-			(at 66.04 109.22 0)
+			(at 101.6 135.89 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3990,7 +4076,7 @@
 			)
 		)
 		(property "Description" ""
-			(at 66.04 109.22 0)
+			(at 101.6 135.89 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4018,7 +4104,7 @@
 	)
 	(symbol
 		(lib_id "MCU_ST_STM32F4:STM32F411CEUx")
-		(at 55.88 57.15 0)
+		(at 50.8 97.79 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -4027,7 +4113,7 @@
 		(fields_autoplaced yes)
 		(uuid "8d259676-4484-41c1-84e7-4bb7f1263e99")
 		(property "Reference" "U2"
-			(at 60.5633 97.79 0)
+			(at 55.4833 138.43 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4036,7 +4122,7 @@
 			)
 		)
 		(property "Value" "STM32F411CEUx"
-			(at 60.5633 100.33 0)
+			(at 55.4833 140.97 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4045,7 +4131,7 @@
 			)
 		)
 		(property "Footprint" "Package_DFN_QFN:QFN-48-1EP_7x7mm_P0.5mm_EP5.6x5.6mm"
-			(at 40.64 95.25 0)
+			(at 35.56 135.89 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4055,7 +4141,7 @@
 			)
 		)
 		(property "Datasheet" "https://www.st.com/resource/en/datasheet/stm32f411ce.pdf"
-			(at 55.88 57.15 0)
+			(at 50.8 97.79 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4064,7 +4150,7 @@
 			)
 		)
 		(property "Description" "STMicroelectronics Arm Cortex-M4 MCU, 512KB flash, 128KB RAM, 100 MHz, 1.7-3.6V, 36 GPIO, UFQFPN48"
-			(at 55.88 57.15 0)
+			(at 50.8 97.79 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4230,7 +4316,7 @@
 	)
 	(symbol
 		(lib_id "usb:USBLC6-2SC6")
-		(at 111.76 48.26 0)
+		(at 118.11 25.4 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -4239,7 +4325,7 @@
 		(fields_autoplaced yes)
 		(uuid "97bdd582-4bff-44ea-993d-ea3c4d4dd6e3")
 		(property "Reference" "CR1"
-			(at 128.27 40.64 0)
+			(at 134.62 17.78 0)
 			(effects
 				(font
 					(size 1.524 1.524)
@@ -4247,7 +4333,7 @@
 			)
 		)
 		(property "Value" "USBLC6-2SC6"
-			(at 128.27 43.18 0)
+			(at 134.62 20.32 0)
 			(effects
 				(font
 					(size 1.524 1.524)
@@ -4255,7 +4341,7 @@
 			)
 		)
 		(property "Footprint" "SOT23-6L_STM"
-			(at 111.76 48.26 0)
+			(at 118.11 25.4 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4265,7 +4351,7 @@
 			)
 		)
 		(property "Datasheet" "https://www.st.com/resource/en/datasheet/usblc6-2.pdf"
-			(at 111.76 48.26 0)
+			(at 118.11 25.4 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4275,7 +4361,7 @@
 			)
 		)
 		(property "Description" ""
-			(at 111.76 48.26 0)
+			(at 118.11 25.4 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4312,7 +4398,7 @@
 	)
 	(symbol
 		(lib_id "wago:2060-1452_998-404")
-		(at 146.05 86.36 0)
+		(at 64.77 30.48 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -4321,7 +4407,7 @@
 		(fields_autoplaced yes)
 		(uuid "f75df0a2-9fe9-44bc-b011-513c769f3f05")
 		(property "Reference" "J1"
-			(at 160.02 88.8999 0)
+			(at 78.74 33.0199 0)
 			(effects
 				(font
 					(size 1.524 1.524)
@@ -4330,7 +4416,7 @@
 			)
 		)
 		(property "Value" "2060-1452/998-404"
-			(at 160.02 91.4399 0)
+			(at 78.74 35.5599 0)
 			(effects
 				(font
 					(size 1.524 1.524)
@@ -4339,7 +4425,7 @@
 			)
 		)
 		(property "Footprint" "WAG"
-			(at 146.05 86.36 0)
+			(at 64.77 30.48 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4349,7 +4435,7 @@
 			)
 		)
 		(property "Datasheet" "2060-1452/998-404"
-			(at 146.05 86.36 0)
+			(at 64.77 30.48 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4359,7 +4445,7 @@
 			)
 		)
 		(property "Description" ""
-			(at 146.05 86.36 0)
+			(at 64.77 30.48 0)
 			(effects
 				(font
 					(size 1.27 1.27)

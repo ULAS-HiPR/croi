@@ -4,4 +4,5 @@
   (lib (name "usb")(type "KiCad")(uri "C:/Users/kyleo/Documents/KiCad/9.0/symbols/USBLC6-2SC6.kicad_sym")(options "")(descr ""))
   (lib (name "ESQ")(type "KiCad")(uri "C:/Users/kyleo/Documents/KiCad/9.0/symbols/ESQ-110-X-X-D.kicad_sym")(options "")(descr ""))
   (lib (name "wago")(type "KiCad")(uri "C:/Users/kyleo/Documents/KiCad/9.0/symbols/Wago_2060-1452 998-404.kicad_sym")(options "")(descr ""))
+  (lib (name "STM32F411CEU6")(type "KiCad")(uri "C:/Users/kyleo/Downloads/ul_STM32F411CEU6/KiCADv6/STM32F411CEU6.kicad_sym")(options "")(descr ""))
 )
