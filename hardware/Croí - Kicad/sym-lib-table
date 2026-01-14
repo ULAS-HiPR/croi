@@ -7,4 +7,6 @@
   (lib (name "STM32F411CEU6")(type "KiCad")(uri "C:/Users/kyleo/Downloads/ul_STM32F411CEU6/KiCADv6/STM32F411CEU6.kicad_sym")(options "")(descr ""))
   (lib (name "BMP390")(type "KiCad")(uri "C:/Users/kyleo/Documents/KiCad/9.0/symbols/2026-01-14_14-39-52.kicad_sym")(options "")(descr ""))
   (lib (name "BME680")(type "KiCad")(uri "C:/Users/kyleo/Documents/KiCad/9.0/symbols/2026-01-14_15-28-30.kicad_sym")(options "")(descr ""))
+  (lib (name "ADXL375BCCZ")(type "KiCad")(uri "C:/Users/kyleo/Documents/KiCad/9.0/symbols/2026-01-14_19-21-33.kicad_sym")(options "")(descr ""))
+  (lib (name "LSM6DSO32TR")(type "KiCad")(uri "C:/Users/kyleo/Documents/KiCad/9.0/symbols/2026-01-14_19-37-44.kicad_sym")(options "")(descr ""))
 )
