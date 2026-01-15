@@ -9,7 +9,7 @@ The heart of the flight computer
 - **Components:**
     - **MCU:** **STM32F411CEU6** (High Performance, FPU, Internal CAN Controller).
     - **Memory:** **W25N01GV** (1Gb SPI NAND Flash) - *Vibration proof logging.*
-    - **Sensors:** **BMP390** (Altimeter) + **LSM6DSO32** (IMU) + **BME680** (Env).
+    - **Sensors:** **BMP390** (Altimeter) + **LSM6DSO32** (IMU) + **BME680** (Env) + **ADXL375** (accelerometer)
     - **LDO:** TLV70433DBVT, fixed 3.3v.
     - **Interface:** USB-C (Data dump), Buzzer, RGB LED.
     - **Comms:** **TJA1051 CAN Transceiver**.
