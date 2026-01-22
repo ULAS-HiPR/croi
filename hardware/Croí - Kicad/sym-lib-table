@@ -9,4 +9,5 @@
   (lib (name "BME680")(type "KiCad")(uri "C:/Users/kyleo/Documents/KiCad/9.0/symbols/2026-01-14_15-28-30.kicad_sym")(options "")(descr ""))
   (lib (name "ADXL375BCCZ")(type "KiCad")(uri "C:/Users/kyleo/Documents/KiCad/9.0/symbols/2026-01-14_19-21-33.kicad_sym")(options "")(descr ""))
   (lib (name "LSM6DSO32TR")(type "KiCad")(uri "C:/Users/kyleo/Documents/KiCad/9.0/symbols/2026-01-14_19-37-44.kicad_sym")(options "")(descr ""))
+  (lib (name "2026-01-22_17-18-07")(type "KiCad")(uri "C:/Users/kyleo/Documents/KiCad/9.0/symbols/2026-01-22_17-18-07.kicad_sym")(options "")(descr ""))
 )
