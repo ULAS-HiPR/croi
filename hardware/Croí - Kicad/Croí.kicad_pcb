@@ -3903,7 +3903,7 @@
 		(uuid "4a605ac1-de82-45ad-a736-1aea71fe86da")
 		(at 52.5 72 -90)
 		(property "Reference" "J4"
-			(at -6.15 -6.9718 270)
+			(at -6.15 -6.9718 90)
 			(layer "F.SilkS")
 			(uuid "ee278ae4-eee0-4e06-ae4b-3749362835d7")
 			(effects
@@ -3914,7 +3914,7 @@
 			)
 		)
 		(property "Value" "436500303"
-			(at 0.2 -5.4018 270)
+			(at 0.2 -5.4018 90)
 			(layer "F.Fab")
 			(uuid "1915be82-f489-4d1f-8767-b18924ab698a")
 			(effects
@@ -3925,7 +3925,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 0 0 270)
+			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
 			(uuid "56061ca5-6ad3-414a-b03c-4be5a5bfd36f")
@@ -3937,7 +3937,7 @@
 			)
 		)
 		(property "Description" ""
-			(at 0 0 270)
+			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
 			(uuid "bc7fe543-767f-425c-b56a-15ea405de352")
@@ -4441,7 +4441,7 @@
 			(uuid "e46f4a65-0f11-4290-9abf-906c13fdadad")
 		)
 		(fp_text user "PTH D2.41 +/-0.05"
-			(at -9.325 -3 270)
+			(at -9.325 -3 90)
 			(layer "F.Fab")
 			(uuid "2e73b8d0-43e6-4143-aa51-6be2ad89b67c")
 			(effects
@@ -4452,7 +4452,7 @@
 			)
 		)
 		(fp_text user "MAX"
-			(at -9.14 13.415 270)
+			(at -9.14 13.415 90)
 			(layer "F.Fab")
 			(uuid "497b60a2-37c8-4020-af0f-3d47438ce449")
 			(effects
@@ -4463,7 +4463,7 @@
 			)
 		)
 		(fp_text user "PTH D1.02 +/-0.05"
-			(at -9.325 -3.75 270)
+			(at -9.325 -3.75 90)
 			(layer "F.Fab")
 			(uuid "9c9dcd0c-b046-4166-ac45-f575a47402c7")
 			(effects
@@ -4474,7 +4474,7 @@
 			)
 		)
 		(fp_text user "PCB Edge"
-			(at -9 14.75 270)
+			(at -9 14.75 90)
 			(layer "F.Fab")
 			(uuid "f2195f4e-8724-4672-a09c-a6f94488fc2a")
 			(effects
@@ -25439,7 +25439,7 @@
 		(uuid "28eb8eed-4c80-465b-a314-940bbf137067")
 	)
 	(via
-		(at 64.831 58.169)
+		(at 66 59.5)
 		(size 0.6)
 		(drill 0.3)
 		(layers "F.Cu" "B.Cu")
