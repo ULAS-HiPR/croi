@@ -5,426 +5,6 @@
 	(uuid "c72f7211-c022-4e45-b2e6-f28a82a66d95")
 	(paper "A3")
 	(lib_symbols
-		(symbol "436500303:436500303"
-			(pin_names
-				(offset 1.016)
-			)
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(property "Reference" "J"
-				(at 0 8.89 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify left bottom)
-				)
-			)
-			(property "Value" "436500303"
-				(at 0 -12.7 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify left bottom)
-				)
-			)
-			(property "Footprint" "436500303:MOLEX_436500303"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify bottom)
-					(hide yes)
-				)
-			)
-			(property "Datasheet" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Description" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "MF" "Molex"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify bottom)
-					(hide yes)
-				)
-			)
-			(property "MAXIMUM_PACKAGE_HEIGHT" "5.57 mm"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify bottom)
-					(hide yes)
-				)
-			)
-			(property "Package" "None"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify bottom)
-					(hide yes)
-				)
-			)
-			(property "Price" "None"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify bottom)
-					(hide yes)
-				)
-			)
-			(property "Check_prices" "https://www.snapeda.com/parts/436500303/Molex/view-part/?ref=eda"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify bottom)
-					(hide yes)
-				)
-			)
-			(property "STANDARD" "Manufacturer Recommendations"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify bottom)
-					(hide yes)
-				)
-			)
-			(property "PARTREV" "F3"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify bottom)
-					(hide yes)
-				)
-			)
-			(property "SnapEDA_Link" "https://www.snapeda.com/parts/436500303/Molex/view-part/?ref=snap"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify bottom)
-					(hide yes)
-				)
-			)
-			(property "MP" "436500303"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify bottom)
-					(hide yes)
-				)
-			)
-			(property "Description_1" "Conn Power HDR 3 POS 3mm Solder RA Thru-Hole 3 Terminal 1 Port Micro-Fit 3.0™ Tray"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify bottom)
-					(hide yes)
-				)
-			)
-			(property "Availability" "In Stock"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify bottom)
-					(hide yes)
-				)
-			)
-			(property "MANUFACTURER" "Molex"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify bottom)
-					(hide yes)
-				)
-			)
-			(symbol "436500303_0_0"
-				(polyline
-					(pts
-						(xy 0 6.35) (xy 0 5.08)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0 6.35) (xy 1.27 7.62)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0 5.08) (xy 0 -8.89)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0 5.08) (xy 1.905 5.08)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0 2.54) (xy 1.905 2.54)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0 0) (xy 1.905 0)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0 -8.89) (xy 1.27 -10.16)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(rectangle
-					(start 0.635 4.7625)
-					(end 2.2225 5.3975)
-					(stroke
-						(width 0.1)
-						(type default)
-					)
-					(fill
-						(type outline)
-					)
-				)
-				(rectangle
-					(start 0.635 2.2225)
-					(end 2.2225 2.8575)
-					(stroke
-						(width 0.1)
-						(type default)
-					)
-					(fill
-						(type outline)
-					)
-				)
-				(rectangle
-					(start 0.635 -0.3175)
-					(end 2.2225 0.3175)
-					(stroke
-						(width 0.1)
-						(type default)
-					)
-					(fill
-						(type outline)
-					)
-				)
-				(polyline
-					(pts
-						(xy 1.27 -10.16) (xy 12.7 -10.16)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 12.7 7.62) (xy 1.27 7.62)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 12.7 -10.16) (xy 12.7 7.62)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(pin passive line
-					(at -5.08 5.08 0)
-					(length 5.08)
-					(name "1"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at -5.08 2.54 0)
-					(length 5.08)
-					(name "2"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at -5.08 0 0)
-					(length 5.08)
-					(name "3"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-					(number "3"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at -5.08 -5.08 0)
-					(length 5.08)
-					(name "SHIELD1"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-					(number "S1"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at -5.08 -7.62 0)
-					(length 5.08)
-					(name "SHIELD2"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-					(number "S2"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-				)
-			)
-			(embedded_fonts no)
-		)
 		(symbol "ADXL375BCCZ:ADXL375BCCZ"
 			(pin_names
 				(offset 0.254)
@@ -6193,179 +5773,6 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "l:_1"
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(property "Reference" "U"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Value" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Footprint" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Datasheet" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Description" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(symbol "_1_0_1"
-				(rectangle
-					(start 2.54 0)
-					(end 6.35 -12.7)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-			)
-			(symbol "_1_1_1"
-				(pin bidirectional line
-					(at 0 0 0)
-					(length 2.54)
-					(name "3.3V"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin bidirectional line
-					(at 0 -2.54 0)
-					(length 2.54)
-					(name "GND"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin bidirectional line
-					(at 0 -5.08 0)
-					(length 2.54)
-					(name "Vin_Passthrough"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "3"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin bidirectional line
-					(at 0 -7.62 0)
-					(length 2.54)
-					(name "GND"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "4"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin bidirectional line
-					(at 0 -10.16 0)
-					(length 2.54)
-					(name "Video"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "5"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin bidirectional line
-					(at 0 -12.7 0)
-					(length 2.54)
-					(name "unimportant"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "6"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-			)
-			(embedded_fonts no)
-		)
 		(symbol "power:GND"
 			(power)
 			(pin_numbers
@@ -6669,12 +6076,6 @@
 		(uuid "ef76ebba-096c-40c6-aca3-840953204abf")
 	)
 	(junction
-		(at 306.07 160.02)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "03676a46-c32a-4cac-8e70-d04cbc2491c7")
-	)
-	(junction
 		(at 227.33 99.06)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -6835,12 +6236,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "80788a71-233f-43be-ba87-dfbc30991cfc")
-	)
-	(junction
-		(at 314.96 149.86)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "812b9ac8-a7b2-4c09-a380-325a64a28808")
 	)
 	(junction
 		(at 127 52.07)
@@ -7089,10 +6484,6 @@
 		(uuid "39b3d6b2-1b61-406d-a120-3c6b52ed7d33")
 	)
 	(no_connect
-		(at 330.2 160.02)
-		(uuid "430e403b-a54f-490f-9eb7-15a0acaf2a73")
-	)
-	(no_connect
 		(at 116.84 60.96)
 		(uuid "47345711-14b3-4d3c-af85-bf36e59d730a")
 	)
@@ -7123,10 +6514,6 @@
 	(no_connect
 		(at 116.84 71.12)
 		(uuid "6f07d3ec-749c-456e-93d4-580d216e682b")
-	)
-	(no_connect
-		(at 330.2 152.4)
-		(uuid "71c13afb-cbd1-4467-b03e-4b72718127a8")
 	)
 	(no_connect
 		(at 157.48 81.28)
@@ -7326,16 +6713,6 @@
 	)
 	(wire
 		(pts
-			(xy 314.96 149.86) (xy 330.2 149.86)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "0f9cfc26-6247-4649-a60f-735e7292d858")
-	)
-	(wire
-		(pts
 			(xy 361.95 38.1) (xy 367.03 38.1)
 		)
 		(stroke
@@ -7473,16 +6850,6 @@
 			(type default)
 		)
 		(uuid "26f4cf2d-f436-4864-a80a-df15bf799f84")
-	)
-	(wire
-		(pts
-			(xy 306.07 160.02) (xy 306.07 157.48)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "27c941a8-0648-407e-b2eb-29028bdc07ac")
 	)
 	(wire
 		(pts
@@ -7896,16 +7263,6 @@
 	)
 	(wire
 		(pts
-			(xy 306.07 147.32) (xy 330.2 147.32)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "5a34bcff-f2f4-4387-bd0f-b0cceb94aa2c")
-	)
-	(wire
-		(pts
 			(xy 149.86 127) (xy 152.4 127)
 		)
 		(stroke
@@ -7913,16 +7270,6 @@
 			(type default)
 		)
 		(uuid "5c49d8e9-6985-44c6-a51b-cb3a60ca948b")
-	)
-	(wire
-		(pts
-			(xy 306.07 152.4) (xy 321.31 152.4)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "5c57dd3f-1d2f-498c-930c-88629ad7fc8e")
 	)
 	(wire
 		(pts
@@ -8376,16 +7723,6 @@
 	)
 	(wire
 		(pts
-			(xy 321.31 157.48) (xy 330.2 157.48)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "9802ec08-2ef4-4920-b5b4-b6aec16b4dad")
-	)
-	(wire
-		(pts
 			(xy 234.95 38.1) (xy 238.76 38.1)
 		)
 		(stroke
@@ -8433,16 +7770,6 @@
 			(type default)
 		)
 		(uuid "a6552b94-93b7-449d-abd4-3ff2892ea820")
-	)
-	(wire
-		(pts
-			(xy 314.96 149.86) (xy 306.07 149.86)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "a751cf25-db03-4025-987c-740f9dee556e")
 	)
 	(wire
 		(pts
@@ -8733,16 +8060,6 @@
 			(type default)
 		)
 		(uuid "c38b8696-6bc8-49fb-8510-3905c686d858")
-	)
-	(wire
-		(pts
-			(xy 321.31 152.4) (xy 321.31 157.48)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "c65ea578-e022-4efb-9ba9-7d1b7090c579")
 	)
 	(wire
 		(pts
@@ -9229,28 +8546,6 @@
 		(uuid "04888508-971e-4592-b5a5-7395dccd7ad3")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 237.7537 106.68 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-	)
-	(global_label "3.3V"
-		(shape input)
-		(at 317.5 147.32 90)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "05c8b4f0-4bd3-46b3-82f1-821dddb6af52")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 317.5 140.2224 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12436,74 +11731,6 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 314.96 149.86 0)
-		(mirror x)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "53938a59-6c00-4405-bc9b-5e7b735267a1")
-		(property "Reference" "#PWR024"
-			(at 314.96 143.51 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "GND"
-			(at 312.42 148.5899 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-			)
-		)
-		(property "Footprint" ""
-			(at 314.96 149.86 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 314.96 149.86 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 314.96 149.86 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "f81f4fd4-376f-42ee-a4b6-6f365d5d6ab7")
-		)
-		(instances
-			(project ""
-				(path "/c72f7211-c022-4e45-b2e6-f28a82a66d95"
-					(reference "#PWR024")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:GND")
 		(at 182.88 88.9 90)
 		(unit 1)
 		(exclude_from_sim no)
@@ -12712,88 +11939,6 @@
 			(project "Croí"
 				(path "/c72f7211-c022-4e45-b2e6-f28a82a66d95"
 					(reference "U7")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "l:_1")
-		(at 330.2 147.32 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "5deb2c23-c04f-49e8-8cd3-104065c38c64")
-		(property "Reference" "U6"
-			(at 330.2 147.32 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "~"
-			(at 337.82 153.6699 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Library:Untitled"
-			(at 330.2 147.32 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 330.2 147.32 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" ""
-			(at 330.2 147.32 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "2"
-			(uuid "ea3f4b38-e36b-43c3-9caf-24ce05ad4857")
-		)
-		(pin "4"
-			(uuid "7b7f1fbe-37c4-4aaf-b88d-1f9b57434584")
-		)
-		(pin "3"
-			(uuid "513b94c2-c22f-4d18-9390-c4a3fd1bf76f")
-		)
-		(pin "1"
-			(uuid "bbfebea7-09bd-4781-b481-c4fedf2674ab")
-		)
-		(pin "5"
-			(uuid "ef25f125-95a1-4e62-8221-1381b498b679")
-		)
-		(pin "6"
-			(uuid "8ec7439d-5263-4f9b-8ec0-abd7e0ed2481")
-		)
-		(instances
-			(project ""
-				(path "/c72f7211-c022-4e45-b2e6-f28a82a66d95"
-					(reference "U6")
 					(unit 1)
 				)
 			)
@@ -13770,204 +12915,6 @@
 			(project "Croí"
 				(path "/c72f7211-c022-4e45-b2e6-f28a82a66d95"
 					(reference "C25")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "436500303:436500303")
-		(at 300.99 152.4 0)
-		(mirror y)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "89775988-48c9-4f36-9220-51bc5a66fd96")
-		(property "Reference" "J4"
-			(at 293.37 146.05 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "436500303"
-			(at 290.068 150.876 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "MOLEX_436500303"
-			(at 300.99 152.4 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify bottom)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 300.99 152.4 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" ""
-			(at 300.99 152.4 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "MF" "Molex"
-			(at 300.99 152.4 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify bottom)
-				(hide yes)
-			)
-		)
-		(property "MAXIMUM_PACKAGE_HEIGHT" "5.57 mm"
-			(at 300.99 152.4 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify bottom)
-				(hide yes)
-			)
-		)
-		(property "Package" "None"
-			(at 300.99 152.4 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify bottom)
-				(hide yes)
-			)
-		)
-		(property "Price" "None"
-			(at 300.99 152.4 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify bottom)
-				(hide yes)
-			)
-		)
-		(property "Check_prices" "https://www.snapeda.com/parts/436500303/Molex/view-part/?ref=eda"
-			(at 300.99 152.4 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify bottom)
-				(hide yes)
-			)
-		)
-		(property "STANDARD" "Manufacturer Recommendations"
-			(at 300.99 152.4 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify bottom)
-				(hide yes)
-			)
-		)
-		(property "PARTREV" "F3"
-			(at 300.99 152.4 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify bottom)
-				(hide yes)
-			)
-		)
-		(property "SnapEDA_Link" "https://www.snapeda.com/parts/436500303/Molex/view-part/?ref=snap"
-			(at 300.99 152.4 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify bottom)
-				(hide yes)
-			)
-		)
-		(property "MP" "436500303"
-			(at 300.99 152.4 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify bottom)
-				(hide yes)
-			)
-		)
-		(property "Description_1" "Conn Power HDR 3 POS 3mm Solder RA Thru-Hole 3 Terminal 1 Port Micro-Fit 3.0™ Tray"
-			(at 300.99 152.4 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify bottom)
-				(hide yes)
-			)
-		)
-		(property "Availability" "In Stock"
-			(at 300.99 152.4 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify bottom)
-				(hide yes)
-			)
-		)
-		(property "MANUFACTURER" "Molex"
-			(at 300.99 152.4 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify bottom)
-				(hide yes)
-			)
-		)
-		(pin "2"
-			(uuid "c85694f3-6ac9-4bfa-88f2-005a2d34735e")
-		)
-		(pin "3"
-			(uuid "fea6ca68-21de-4681-9252-ea395e50fac4")
-		)
-		(pin "1"
-			(uuid "a4c3efaf-0420-4bb3-b501-7126b8ab36be")
-		)
-		(pin "S1"
-			(uuid "9e71377b-13d3-4757-bd5f-b06ebf2049e1")
-		)
-		(pin "S2"
-			(uuid "7360c6a4-aea4-4c3b-8b4e-e8e75b94c5a0")
-		)
-		(instances
-			(project "Croí"
-				(path "/c72f7211-c022-4e45-b2e6-f28a82a66d95"
-					(reference "J4")
 					(unit 1)
 				)
 			)
@@ -15298,73 +14245,6 @@
 		)
 	)
 	(symbol
-		(lib_id "power:GND")
-		(at 330.2 154.94 270)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "be8c2f67-3459-4f16-b298-79812637d3d1")
-		(property "Reference" "#PWR031"
-			(at 323.85 154.94 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "GND"
-			(at 326.39 154.9399 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-			)
-		)
-		(property "Footprint" ""
-			(at 330.2 154.94 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 330.2 154.94 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 330.2 154.94 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "4bec25b9-7320-4fd3-9369-733a642e37ce")
-		)
-		(instances
-			(project ""
-				(path "/c72f7211-c022-4e45-b2e6-f28a82a66d95"
-					(reference "#PWR031")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "BME680:BME680")
 		(at 321.31 35.56 0)
 		(unit 1)
@@ -15651,74 +14531,6 @@
 			(project "Croí"
 				(path "/c72f7211-c022-4e45-b2e6-f28a82a66d95"
 					(reference "R7")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:GND")
-		(at 306.07 160.02 90)
-		(mirror x)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "d061b78c-1b19-4a9c-9981-10693988e0fe")
-		(property "Reference" "#PWR022"
-			(at 312.42 160.02 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "GND"
-			(at 309.88 160.0201 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-			)
-		)
-		(property "Footprint" ""
-			(at 306.07 160.02 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 306.07 160.02 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 306.07 160.02 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "9e9ed8a1-3d7d-4325-9e27-577007ba94d7")
-		)
-		(instances
-			(project ""
-				(path "/c72f7211-c022-4e45-b2e6-f28a82a66d95"
-					(reference "#PWR022")
 					(unit 1)
 				)
 			)
