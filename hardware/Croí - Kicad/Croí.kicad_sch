@@ -11836,7 +11836,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "5023860570:MOLEX_5023860570"
+		(property "Footprint" "MOLEX:MOLEX_5023860570"
 			(at 215.9 113.03 0)
 			(effects
 				(font
