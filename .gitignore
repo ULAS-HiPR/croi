@@ -46,3 +46,5 @@ firmware/.vscode/c_cpp_properties.json
 firmware/.vscode/launch.json
 firmware/.vscode/ipch
 
+#Mac 
+*.DS_Store
