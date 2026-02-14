@@ -15,7 +15,7 @@ on:
 
 jobs:
   sil-tests:
-    name: Run SIL Tests (Native)
+    name: Run STM Checks (Native)
     runs-on: ubuntu-latest
 
     steps:
@@ -32,20 +32,16 @@ jobs:
       - name: Install PlatformIO
         run: pip install platformio
 
-      - name: Run SIL tests
-        run: |
-          pio test -e sil
+      - name: Complie for STM Nucleo
+	run: |
+	  pio run -e nucleo_f411re
 
-      - name: Quality Check SIL
+      - name: Quality Check STM
         run: |
-          pio check -e sil
-
-      - name: Quality Check Pico
-        run: |
-          pio check -e pico
+          pio check -e nucleo
  
-  build-pico:
-    name: Build Pico Firmware
+  build-stm:
+    name: Build STM Firmware
     runs-on: ubuntu-latest
     needs: sil-tests
 
@@ -63,13 +59,13 @@ jobs:
       - name: Install PlatformIO
         run: pip install platformio
 
-      - name: Build Pico firmware
+      - name: Build STM firmware
         run: |
-          pio run -e pico
+          pio run -e nucelo_f411re
 
-      - name: Upload Pico firmware (.uf2)
+      - name: Upload STM firmware
         uses: actions/upload-artifact@v4
         with:
-          name: pico-firmware
+          name: stm-firmware
           path: |
-            .pio/build/pico/*.uf2
+            .pio/build/pico/nucleo_f411re

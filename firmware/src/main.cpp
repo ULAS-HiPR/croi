@@ -111,7 +111,8 @@ int main(void)
         .main_height = 200,
         .drouge_delay = 0,
         .liftoff_thresh = 20
-    }
+    };
+
     StateMachine* state_machine = new StateMachine(settings);
 
     static FSM_TaskArgs fsm_args {
