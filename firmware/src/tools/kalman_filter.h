@@ -1,5 +1,12 @@
+#ifndef KALMAN_FILTER_H
+#define KALMAN_FILTER_H
+#define EIGEN_NO_DEBUG
+#define EIGEN_MPL2_ONLY
+#define EIGEN_DONT_VECTORIZE
+#define EIGEN_DISABLE_UNALIGNED_ARRAY_ASSERT
 #include <Eigen/Dense>
 #include "../data.h"
+
 
 class KalmanFilter {
 public:
@@ -24,3 +31,5 @@ private:
     Eigen::MatrixXd R;  // Measurement noise covariance matrix
     Eigen::MatrixXd Q;  // Process noise covariance matrix
 };
+
+#endif // KALMAN_FILTER_H

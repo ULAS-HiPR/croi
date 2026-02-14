@@ -5,11 +5,12 @@
 #include "data.h"
 #include "tools/state_machine.h"
 #include "tools/kalman_filter.h"
-#include <braiteoiri/IMU/IMU.h>
-#include <braiteoiri/Baro/baro.h>
+#include <IMU/IMU.h>
+#include <IMU/MPU6050.h>
+#include <Sensor.h>
 
-#include <braiteoiri/IMU/MPU6050.h>
-#include <braiteoiri/Baro/BMP390.h>
+#include <Baro/baro.h>
+#include <Baro/BMP390.h>
 
 #define LED_PIN                                GPIO_PIN_5
 #define LED_GPIO_PORT                          GPIOA
