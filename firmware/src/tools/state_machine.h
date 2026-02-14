@@ -1,3 +1,5 @@
+#ifndef STATE_MACHINE_H
+#define STATE_MACHINE_H
 #include "../data.h"
 #include "kalman_filter.h"
 #include <stdio.h>
@@ -16,7 +18,7 @@ public:
     };
 
     StateMachine(flash_internal_data settings);
-    void run(void * pvParameters );
+    //void run(void * pvParameters );
 
     KalmanFilter kalman_filter;
 private:
@@ -36,3 +38,5 @@ private:
     int drouge_delay{0};
     int liftoff_threshold{20};
 };
+
+#endif // STATE_MACHINE_H

@@ -4,3 +4,6 @@
 [submodule "firmware/lib/comheadan"]
 	path = firmware/lib/comheadan
 	url = git@github.com:ULAS-HiPR/comheadan.git
+[submodule "firmware/lib/eigen"]
+	path = firmware/lib/eigen
+	url = https://gitlab.com/libeigen/eigen.git

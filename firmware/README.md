@@ -28,5 +28,5 @@ git submodule update --init --recursive
 - I2C
 
 ## Other:
-
-- FreeRTOS
+- FreeRTOS -> Cmsis wrapper, copied from gnereateed code from STM32CubeIDE
+- Eigen 
