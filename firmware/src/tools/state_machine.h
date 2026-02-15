@@ -18,13 +18,15 @@ public:
     };
 
     StateMachine(flash_internal_data settings);
+    void update_state(core_flight_data raw_data, prediction_data prediction);
+    State current_state;
     //void run(void * pvParameters );
 
-    KalmanFilter kalman_filter;
+    //KalmanFilter kalman_filter;
 private:
-    State current_state;
     
-    void update_state(core_flight_data raw_data, prediction_data prediction);
+    
+    
     void check_calibrating_state_done();
     void check_ready_state_done(float accel);
     void check_powered_state_done(float accel);

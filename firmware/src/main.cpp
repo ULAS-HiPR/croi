@@ -1,3 +1,4 @@
+#include "data.h"
 #if F4
 #include "stm32f4xx_hal.h"
 #endif
@@ -23,54 +24,10 @@ struct FSM_TaskArgs {
     IMU* imu;
     Baro* baro;
     KalmanFilter* kalman;
-    StateMachine* state_machine;
     flash_internal_data settings;
 };
 
-void StartFSM(void *argument)
-{
-    imu = IMU_Handler();
-    baro = Barometer_Handler();
-    kalman_filter = KalmanFilter();
-    state_machine = StateMachine(settings);
-
-    flight_data raw_data;
-    flight_data old_data;
-    flight_data processed_data;
-
-    int time = 0;
-    float time_diff = 0;
-    for (;;)
-    {
-        time = to_ms_since_boot(get_absolute_time());
-        time_diff = (time - old_data.time) / 1000.0f;
-        if (imu.update(&raw_data.core_data.acceleration)){
-            //printf("Got IMU\n");
-        }
-        {
-            //printf("Got IMU\n");
-        }
-        if (baro.update(&raw_data.core_data.barometer)){
-            //printf("Got Baro\n");
-        }
-
-        kalman_filter.predict(time_diff);
-        if (raw_data.state > 4)
-        {
-            //acceleration not relivant after apogee
-            raw_data.core_data.acceleration.y = 0.0000f;
-        }
-        kalman_filter.update(raw_data.core_data.barometer.altitude, (raw_data.core_data.acceleration.y)); // y axis for test data
-        kalman_filter.update_values(&raw_data.prediction);
-        state_machine.update_state(raw_data.core_data, raw_data.prediction);
-
-        printf("data %d %f %f %f %d\n", time, raw_data.prediction.altitude, raw_data.prediction.velocity, raw_data.prediction.acceleration, state_machine.current_state;);
-        raw_data.state = state_machine.current_state;
-        old_data = raw_data;
-
-      osDelay(1000);
-    }
-}
+extern "C" void StartFSM(void* argument);
 
 osThreadId_t blinkTaskHandle;
 
@@ -104,23 +61,27 @@ int main(void)
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     HAL_GPIO_Init(LED_GPIO_PORT, &GPIO_InitStruct); 
 
-    IMU* imu = new MP6050;
-    Baro* baro = new BMP390;
-    KalmanFilter* kalman = new KalmanFilter;
+    I2C_Handler* i2c_handler;
+    SPI_Handler* spi_handler;
+    IMU* imu = new MPU6050(*i2c_handler);
+    Baro* baro = new BMP390(*spi_handler);
+    KalmanFilter* kalman = new KalmanFilter();
     static flash_internal_data settings {
         .main_height = 200,
         .drouge_delay = 0,
         .liftoff_thresh = 20
     };
 
-    StateMachine* state_machine = new StateMachine(settings);
+    //StateMachine* state_machine = new StateMachine(settings);
 
-    static FSM_TaskArgs fsm_args {
-        .imu = imu,
-        .baro = baro,
-        .kalman = kalman,
-        .settings = settings
-    };
+    static FSM_TaskArgs fsm_args;
+
+    fsm_args.imu = imu;
+    fsm_args.baro = baro;
+    fsm_args.kalman = kalman;
+    fsm_args.settings = settings;
+
+    osThreadNew(StartFSM, &fsm_args, &blinkTask_attributes);
 
       osKernelStart();
       // never get here 

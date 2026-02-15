@@ -60,7 +60,7 @@ void StateMachine::check_ready_state_done(float accel)
 {
     //float accel = (accel_x * accel_x) + (accel_y * accel_y) + (accel_z * accel_z);
 
-    printf("State Machine: Ready, accel: %f, threshold: %f \n", fabsf(accel), (static_cast<float>(liftoff_threshold)/9.81));
+    //printf("State Machine: Ready, accel: %f, threshold: %f \n", fabsf(accel), (static_cast<float>(liftoff_threshold)/9.81));
     if (fabsf(accel) > (static_cast<float>(liftoff_threshold)/9.81f))
     {
         change_state(State::POWERED);
@@ -81,7 +81,7 @@ void StateMachine::check_coasting_state_done(float velocity)
 {
     if (velocity < 0.0f)
     {
-        // printf("State Machine: Drouge, velocity: %f\n", velocity);
+        printf("State Machine: Drouge, velocity: %f\n", velocity);
         change_state(State::DROUGE);
     }
 }
@@ -90,7 +90,7 @@ void StateMachine::check_drouge_state_done(float height)
 {
     if (height < static_cast<float>(main_height))
     { // add main var
-        // printf("State Machine: Main, height: %f\n", height);
+        //printf("State Machine: Main, height: %f\n", height);
         change_state(State::MAIN);
     }
 }
@@ -99,7 +99,7 @@ void StateMachine::check_main_state_done(float velocity)
 {
     if (velocity < 0.0f)
     {
-        // printf("State Machine: Landed, velocity: %f\n", velocity);
+        printf("State Machine: Landed, velocity: %f\n", velocity);
         change_state(State::LANDED);
     }
 }
