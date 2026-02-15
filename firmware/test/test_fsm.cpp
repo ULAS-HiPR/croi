@@ -7,13 +7,9 @@
 #include <stdexcept>
 #include <stdint.h>
 
-// =======================
-// Forward declarations from firmware
-// =======================
 
 extern "C" void StartFSM(void* argument);
 
-// Bring in your real headers
 #include <tools/kalman_filter.h>
 #include <tools/state_machine.h>
 #include <IMU/IMU.h>
@@ -21,10 +17,6 @@ extern "C" void StartFSM(void* argument);
 #include <data.h>
 #include <fsm.h>
 
-
-// =======================
-// Fake HAL + FreeRTOS
-// =======================
 
 static uint32_t fake_time = 0;
 
@@ -74,7 +66,7 @@ public:
     std::vector<baro_data> samples;
     size_t idx = 0;
 
-    bool init() override { return true; }  // <--- added
+    bool init() override { return true; }  
     bool update(baro_data* out) override {
         if (idx >= samples.size()) return false;
         *out = samples[idx++];
@@ -82,11 +74,6 @@ public:
     }
 };
 
-// =======================
-// CSV Loader
-// Format:
-// time_ms, accel_y, altitude
-// =======================
 
 static void loadCSV(const char* path,
                     MockIMU& imu,
@@ -97,7 +84,6 @@ static void loadCSV(const char* path,
 
     std::string line;
 
-    // Skip header
     std::getline(file, line);
 
 std::vector<uint32_t> sample_times;
@@ -125,15 +111,6 @@ while (std::getline(file, line)) {
     sample_times.push_back(static_cast<uint32_t>(time_sec * 1000.0f));
 }
 }
-
-// =======================
-// FSM Task Args (same as firmware)
-// =======================
-
-
-// =======================
-// The Actual Test
-// =======================
 
 void test_FSM_CSV(void)
 {
@@ -175,11 +152,11 @@ void test_FSM_CSV(void)
 
     tick_callback = [&](uint32_t time) {
         for (auto& cp : checkpoints) {
-            if (!cp.checked && time >= cp.time_ms) {  // use >= instead of ==
+            if (!cp.checked && time >= cp.time_ms) {  
                 printf("[DEBUG] Time %u ms -> FSM state = %d (checkpoint %u ms)\n", time, sm.current_state, cp.time_ms);
                 fflush(stdout);
             
-                cp.checked = true;  // mark checkpoint as done
+                cp.checked = true;  
             
                 if (sm.current_state < cp.expected_state) {
                     throw std::runtime_error(
@@ -191,19 +168,17 @@ void test_FSM_CSV(void)
     };
 
     try {
-        StartFSM(&args);   // run your real FSM task
+        StartFSM(&args);   
     }
     catch (const EndTest&) {
-        // normal end of simulation
+        
     }
     catch (const std::runtime_error& e) {
-        // report to Unity explicitly
         TEST_FAIL_MESSAGE(e.what());
     }
 
-    // Example assertion — adjust to your enum
 
-    TEST_ASSERT_TRUE(sm.current_state == 5); // eg: past apogee
+    TEST_ASSERT_TRUE(sm.current_state == 5); 
 }
 
 
