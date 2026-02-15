@@ -33,12 +33,10 @@ jobs:
         run: pip install platformio
 
       - name: Run tests on SIL
-		run: |
-	  		pio test -e sil
+		run: pio test -e sil -vvv
 
       - name: Quality Check STM
-        run: |
-          pio check -e nucleo
+        run: pio check -e nucleo
  
   build-stm:
     name: Build STM Firmware
