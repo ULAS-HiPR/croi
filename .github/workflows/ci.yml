@@ -15,7 +15,7 @@ on:
 
 jobs:
   sil-tests:
-    name: Run STM Checks (Native)
+    name: Run STM Checks & SIL tests
     runs-on: ubuntu-latest
 
     steps:
@@ -32,9 +32,9 @@ jobs:
       - name: Install PlatformIO
         run: pip install platformio
 
-      - name: Complie for STM Nucleo
-	run: |
-	  pio run -e nucleo_f411re
+      - name: Run tests on SIL
+		run: |
+	  		pio test -e sil
 
       - name: Quality Check STM
         run: |
