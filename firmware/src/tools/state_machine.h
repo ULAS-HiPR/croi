@@ -1,6 +1,6 @@
 #ifndef STATE_MACHINE_H
 #define STATE_MACHINE_H
-#include "../data.h"
+#include <data.h>
 #include "kalman_filter.h"
 #include <stdio.h>
 

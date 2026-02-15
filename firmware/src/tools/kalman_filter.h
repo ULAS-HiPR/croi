@@ -5,8 +5,7 @@
 #define EIGEN_DONT_VECTORIZE
 #define EIGEN_DISABLE_UNALIGNED_ARRAY_ASSERT
 #include <Eigen/Dense>
-#include "../data.h"
-
+#include <data.h>
 
 class KalmanFilter {
 public:

@@ -2,7 +2,7 @@
 #include "stm32f4xx_hal.h"
 #endif
 #include "cmsis_os.h"
-#include "data.h"
+#include <data.h>
 #include "tools/state_machine.h"
 #include "tools/kalman_filter.h"
 #include <IMU/IMU.h>
