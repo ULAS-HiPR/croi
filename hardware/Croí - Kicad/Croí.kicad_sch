@@ -49,16 +49,7 @@
 					(hide yes)
 				)
 			)
-			(property "Description" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "MF" "Molex"
+			(property "Description" "Header; Interconnect System; Wire to Board; PCB Plug; 4 Cont; Thru-Hole; Pinstrip; 8A"
 				(at 0 0 0)
 				(effects
 					(font
@@ -68,7 +59,7 @@
 					(hide yes)
 				)
 			)
-			(property "DESCRIPTION" "Header; Interconnect System; Wire to Board; PCB Plug; 4 Cont; Thru-Hole; Pinstrip; 8A"
+			(property "MF" "Molex"
 				(at 0 0 0)
 				(effects
 					(font
@@ -9149,7 +9140,7 @@
 		)
 		(uuid "ff4e7f53-867e-4514-9a0e-c2b363331164")
 	)
-	(global_label "SWCLK2"
+	(global_label "SWCLK"
 		(shape input)
 		(at 116.84 96.52 0)
 		(fields_autoplaced yes)
@@ -9161,7 +9152,7 @@
 		)
 		(uuid "044276c1-37d7-4ce8-b031-11774386af89")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 127.2637 96.52 0)
+			(at 126.0542 96.52 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9413,7 +9404,7 @@
 			)
 		)
 	)
-	(global_label "5V_LOGIC"
+	(global_label "5VLOGIC"
 		(shape input)
 		(at 250.825 24.13 0)
 		(fields_autoplaced yes)
@@ -9425,7 +9416,7 @@
 		)
 		(uuid "47e58c90-7745-4d6a-8c19-ffcbc48deecc")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 262.5793 24.13 0)
+			(at 261.6117 24.13 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10337,7 +10328,7 @@
 			)
 		)
 	)
-	(global_label "VBAT_Local"
+	(global_label "VBAT"
 		(shape input)
 		(at 233.045 24.13 0)
 		(fields_autoplaced yes)
@@ -10349,7 +10340,7 @@
 		)
 		(uuid "e55b3c66-477e-4f42-87fa-c7a673a56bd2")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 246.4925 24.13 0)
+			(at 240.445 24.13 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -16673,7 +16664,7 @@
 				)
 			)
 		)
-		(property "Footprint" "footprints:LGA-14L_2P5X3X0P83_STM"
+		(property "Footprint" "LGA-14L_2P5X3X0P83_STM"
 			(at 156.21 172.72 0)
 			(effects
 				(font
