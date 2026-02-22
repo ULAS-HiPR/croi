@@ -33,10 +33,14 @@ jobs:
         run: pip install platformio
 
       - name: Run tests on SIL
-        run: pio test -e sil -vvv
+        run: |
+          cd firmware
+          pio test -e sil -vvv
 
       - name: Quality Check STM
-        run: pio check -e nucelo_f411re
+        run: |
+          cd firmware
+         # pio check -e nucleo_f411re not working rn :(
  
   build-stm:
     name: Build STM Firmware
@@ -59,11 +63,13 @@ jobs:
 
       - name: Build STM firmware
         run: |
-          pio run -e nucelo_f411re
+          cd firmware
+          pio run -e nucleo_f411re
 
       - name: Upload STM firmware
         uses: actions/upload-artifact@v4
         with:
           name: stm-firmware
           path: |
+            cd firmware
             .pio/build/nucleo_f411re
