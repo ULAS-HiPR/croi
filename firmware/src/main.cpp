@@ -10,7 +10,7 @@
 
 #include <IMU/IMU.h>
 #include <IMU/MPU6050.h>
-#include <Sensor.h>
+#include <sensor.h>
 #include <Baro/baro.h>
 #include <Baro/BMP390.h>
 
