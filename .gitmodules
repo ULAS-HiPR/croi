@@ -1,11 +1,9 @@
 [submodule "firmware/lib/braiteoiri"]
 	path = firmware/lib/braiteoiri
 	url = git@github.com:ULAS-HiPR/braiteoiri.git
-	branch = fuck_this_bmp390
 [submodule "firmware/lib/comheadan"]
 	path = firmware/lib/comheadan
 	url = git@github.com:ULAS-HiPR/comheadan.git
-	branch = stm_layer
 [submodule "firmware/lib/eigen"]
 	path = firmware/lib/eigen
 	url = https://gitlab.com/libeigen/eigen.git

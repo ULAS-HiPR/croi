@@ -88,8 +88,14 @@ const osThreadAttr_t blinkTask_attributes = {
     0                     // reserved
 };
 
+void test_leak() {
+    int* x = new int(5); // cppcheck should flag memory leak
+    (void)x; // suppress unused variable warning
+}
+
 int main(void)
 {
+    int* leaked_int = new int(42);
     HAL_Init();
     SystemClock_Config();
     osKernelInitialize();
