@@ -1,21 +1,22 @@
 #include "data.h"
 #if F4
 #include "stm32f4xx_hal.h"
+#include "platform/stm_f4.h"
 #endif
 #include "cmsis_os.h"
 #include <data.h>
 #include "tools/state_machine.h"
 #include "tools/kalman_filter.h"
+
 #include <IMU/IMU.h>
 #include <IMU/MPU6050.h>
 #include <Sensor.h>
-
 #include <Baro/baro.h>
 #include <Baro/BMP390.h>
 
-#define LED_PIN                                GPIO_PIN_5
-#define LED_GPIO_PORT                          GPIOA
-#define LED_GPIO_CLK_ENABLE()                  __HAL_RCC_GPIOA_CLK_ENABLE()
+#include <I2C/I2C_STM.h>
+#include <SPI/SPI_STM.h>
+
 
 void SystemClock_Config(void);
 void Error_Handler(void);
@@ -27,7 +28,51 @@ struct FSM_TaskArgs {
     flash_internal_data settings;
 };
 
-extern "C" void StartFSM(void* argument);
+void StartFSM(void *argument)
+{
+    auto* args = static_cast<FSM_TaskArgs*>(argument);
+
+    IMU* imu = args->imu;
+    Baro* baro = args->baro;
+    KalmanFilter* kalman_filter = args->kalman;
+    StateMachine* state_machine = new StateMachine(args->settings);
+
+    flight_data raw_data;
+    flight_data old_data;
+    flight_data processed_data;
+    imu_data imu_data;
+
+    uint32_t time = HAL_GetTick();
+    float time_diff = 0;
+    for (;;)
+    {
+        time = HAL_GetTick();
+        time_diff = (time - old_data.time) / 1000.0f;
+        if (imu->update(&imu_data)){
+            raw_data.core_data.acceleration = imu_data.acceleration;
+            //printf("Got IMU\n");
+        }
+        if (baro->update(&raw_data.core_data.barometer)){
+            //printf("Got Baro\n");
+        }
+
+        kalman_filter->predict(time_diff);
+        if (raw_data.state > 4)
+        {
+            //acceleration not relivant after apogee
+            raw_data.core_data.acceleration.y = 0.0000f;
+        }
+        kalman_filter->update(raw_data.core_data.barometer.altitude, (raw_data.core_data.acceleration.y)); // y axis for test data
+        kalman_filter->update_values(&raw_data.prediction);
+        state_machine->update_state(raw_data.core_data, raw_data.prediction);
+
+        printf("data %lu %f %f %f %d\n", time, raw_data.prediction.altitude, raw_data.prediction.velocity, raw_data.prediction.acceleration, state_machine->current_state);
+        raw_data.state = state_machine->current_state;
+        old_data = raw_data;
+
+      osDelay(1000);
+    }
+}
 
 osThreadId_t blinkTaskHandle;
 
@@ -49,20 +94,10 @@ int main(void)
     SystemClock_Config();
     osKernelInitialize();
 
-    
-  
-    LED_GPIO_CLK_ENABLE();
-  
-    GPIO_InitTypeDef GPIO_InitStruct;
-  
-    GPIO_InitStruct.Pin = LED_PIN;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Pull = GPIO_PULLUP;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-    HAL_GPIO_Init(LED_GPIO_PORT, &GPIO_InitStruct); 
+    int unused = 0;
 
-    I2C_Handler* i2c_handler;
-    SPI_Handler* spi_handler;
+    I2C_Handler* i2c_handler = new I2C_STM(&hi2c1, 0x68 << 1);
+    SPI_Handler* spi_handler = new SPI_STM(&hspi1, BARO_CS_PORT, BARO_CS_PIN);
     IMU* imu = new MPU6050(*i2c_handler);
     Baro* baro = new BMP390(*spi_handler);
     KalmanFilter* kalman = new KalmanFilter();
@@ -87,8 +122,6 @@ int main(void)
       // never get here 
       while (1)
       {
-        HAL_GPIO_TogglePin(LED_GPIO_PORT, LED_PIN);
-
         HAL_Delay(1000);
       }
     }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <inttypes.h>
+
 #include <IMU/IMU.h>
 #include <Baro/baro.h>
 #include "kalman_filter.h"

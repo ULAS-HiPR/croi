@@ -49,9 +49,9 @@ extern "C" void StartFSM(void* argument)
         kalman_filter->update_values(&raw_data.prediction);
         state_machine->update_state(raw_data.core_data, raw_data.prediction);
 
-        printf("data %u %f %f %f %d\n", time, raw_data.prediction.altitude, raw_data.prediction.velocity, raw_data.prediction.acceleration, state_machine->current_state);
+        printf("data %" PRIu32 "%f %f %f %d\n", time, raw_data.prediction.altitude, raw_data.prediction.velocity, raw_data.prediction.acceleration, state_machine->current_state);
         if (raw_data.state != state_machine->current_state) {
-            printf("State changed at time %u ms: %d -> %d\n", time, raw_data.state, state_machine->current_state);
+            printf("State changed at time %" PRIu32 " ms: %d -> %d \n", time, raw_data.state, state_machine->current_state);
         }
         raw_data.state = state_machine->current_state;
         old_data = raw_data;
