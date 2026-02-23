@@ -95,6 +95,10 @@ const osThreadAttr_t blinkTask_attributes = {
 
 int main(void)
 {
+
+
+
+  
     int* leaked_int = new int(42);
     HAL_Init();
     SystemClock_Config();
