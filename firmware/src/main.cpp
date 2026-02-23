@@ -88,10 +88,6 @@ const osThreadAttr_t blinkTask_attributes = {
     0                     // reserved
 };
 
-void test_leak() {
-    int* x = new int(5); // cppcheck should flag memory leak
-    (void)x; // suppress unused variable warning
-}
 
 int main(void)
 {
@@ -99,8 +95,6 @@ int main(void)
     HAL_Init();
     SystemClock_Config();
     osKernelInitialize();
-
-    int unused = 0;
 
     I2C_Handler* i2c_handler = new I2C_STM(&hi2c1, 0x68 << 1);
     SPI_Handler* spi_handler = new SPI_STM(&hspi1, BARO_CS_PORT, BARO_CS_PIN);
