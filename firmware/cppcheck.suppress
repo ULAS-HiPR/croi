@@ -1,0 +1,4 @@
+*:*/.pio/*
+*:*/lib/FreeRTOS/*
+*:*/lib/eigen/*
+missingIncludeSystem
