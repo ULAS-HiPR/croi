@@ -258,7 +258,7 @@
 						)
 					)
 					(number "2"
-						(effects`
+						(effects
 							(font
 								(size 1.27 1.27)
 							)
