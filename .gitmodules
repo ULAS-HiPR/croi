@@ -7,3 +7,4 @@
 [submodule "firmware/lib/eigen"]
 	path = firmware/lib/eigen
 	url = https://gitlab.com/libeigen/eigen.git
+	branch = 5.0

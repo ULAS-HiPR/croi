@@ -77,7 +77,7 @@ void StartFSM(void *argument)
 osThreadId_t blinkTaskHandle;
 
 const osThreadAttr_t blinkTask_attributes = {
-    "blinkTask",          // name
+    "FSMTask",          // name
     0,                    // attr_bits
     nullptr,              // cb_mem
     0,                    // cb_size
