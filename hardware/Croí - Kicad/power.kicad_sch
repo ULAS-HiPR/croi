@@ -2087,6 +2087,15 @@
 				(hide yes)
 			)
 		)
+		(property "SNAPEDA_PN" ""
+			(at 68.58 107.95 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "edfa65f1-730d-4410-b5ee-bb56114a3fc9")
 		)
@@ -2375,6 +2384,15 @@
 				(hide yes)
 			)
 		)
+		(property "SNAPEDA_PN" ""
+			(at 62.23 107.95 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "130ea4a9-1fec-4edd-ab44-e9ca204201dd")
 		)
@@ -2442,6 +2460,15 @@
 			)
 		)
 		(property "Description" "Unpolarized capacitor"
+			(at 154.94 85.09 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "SNAPEDA_PN" ""
 			(at 154.94 85.09 0)
 			(effects
 				(font
@@ -2525,6 +2552,15 @@
 				(hide yes)
 			)
 		)
+		(property "SNAPEDA_PN" ""
+			(at 129.54 85.09 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "ee9d7ab2-a4c0-46f9-b1b2-1ec648687f65")
 		)
@@ -2592,6 +2628,15 @@
 			)
 		)
 		(property "Description" "Unpolarized capacitor"
+			(at 194.31 85.09 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "SNAPEDA_PN" ""
 			(at 194.31 85.09 0)
 			(effects
 				(font
@@ -2744,6 +2789,15 @@
 				(hide yes)
 			)
 		)
+		(property "SNAPEDA_PN" ""
+			(at 74.93 100.33 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "2"
 			(uuid "e4e52a29-b4d5-44cb-bb51-d803493e2223")
 		)
@@ -2811,6 +2865,15 @@
 			)
 		)
 		(property "Description" "Unpolarized capacitor"
+			(at 167.64 85.09 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "SNAPEDA_PN" ""
 			(at 167.64 85.09 0)
 			(effects
 				(font
@@ -2965,6 +3028,15 @@
 				(hide yes)
 			)
 		)
+		(property "SNAPEDA_PN" ""
+			(at 142.24 85.09 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "32bce7c3-fd6e-4e72-8909-15952502f9c4")
 		)
@@ -3032,6 +3104,15 @@
 			)
 		)
 		(property "Description" "Unpolarized capacitor"
+			(at 148.59 85.09 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "SNAPEDA_PN" ""
 			(at 148.59 85.09 0)
 			(effects
 				(font
@@ -3186,6 +3267,15 @@
 				(hide yes)
 			)
 		)
+		(property "SNAPEDA_PN" ""
+			(at 129.54 96.52 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "c514b8b7-0b0d-4208-973b-f1582960404b")
 		)
@@ -3253,6 +3343,15 @@
 			)
 		)
 		(property "Description" "Unpolarized capacitor"
+			(at 58.42 86.36 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "SNAPEDA_PN" ""
 			(at 58.42 86.36 0)
 			(effects
 				(font
@@ -3329,6 +3428,15 @@
 			)
 		)
 		(property "Description" ""
+			(at 120.65 109.22 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "SNAPEDA_PN" ""
 			(at 120.65 109.22 0)
 			(effects
 				(font
@@ -3469,6 +3577,15 @@
 		)
 		(property "Description" "Resistor"
 			(at 60.96 95.25 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "SNAPEDA_PN" ""
+			(at 60.96 95.25 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3693,6 +3810,15 @@
 				(hide yes)
 			)
 		)
+		(property "SNAPEDA_PN" ""
+			(at 181.61 83.82 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "f40f25bc-54c3-4460-badc-723ab3176fd7")
 		)
@@ -3783,6 +3909,15 @@
 				(hide yes)
 			)
 		)
+		(property "SNAPEDA_PN" ""
+			(at 74.93 107.95 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "70c058b2-9ee7-4d06-806d-8ef6ef492a3b")
 		)
@@ -3849,6 +3984,15 @@
 		)
 		(property "Description" "Resistor"
 			(at 64.77 86.36 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "SNAPEDA_PN" ""
+			(at 64.77 86.36 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3923,6 +4067,15 @@
 			)
 		)
 		(property "Description" "Unpolarized capacitor"
+			(at 135.89 85.09 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "SNAPEDA_PN" ""
 			(at 135.89 85.09 0)
 			(effects
 				(font
