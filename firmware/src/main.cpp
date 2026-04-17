@@ -12,14 +12,20 @@
 #include "tools/state_machine.h"
 #include "tools/kalman_filter.h"
 
-#include <IMU/IMU.h>
-#include <IMU/MPU6050.h>
+//Generic henders
 #include <sensor.h>
+#include <IMU/IMU.h>
 #include <Baro/baro.h>
-#include <Baro/BMP390.h>
-
+#include <Flash/flash.h>
 #include <I2C/I2C_STM.h>
 #include <SPI/SPI_STM.h>
+
+//Specific sensors
+#include <IMU/LSM6DSO32.h>
+#include <Baro/MS5607.h>
+#include <Flash/MX25L128.h>
+//#inlcude <IMU/ADXL347.h>
+//#include <Env/BME280.h>
 
 
 void SystemClock_Config(void);
@@ -32,6 +38,7 @@ struct FSM_TaskArgs {
     flash_internal_data settings;
 };
 
+<<<<<<< HEAD
 void StartFSM(void *argument)
 {
     auto* args = static_cast<FSM_TaskArgs*>(argument);
@@ -92,28 +99,37 @@ const osThreadAttr_t blinkTask_attributes = {
     0                     // reserved
 };
 
+=======
+>>>>>>> 6d99526 (adding common tasks & importing correct sensors)
 
 int main(void)
 {
-
-
-
-  
-    int* leaked_int = new int(42);
     HAL_Init();
     SystemClock_Config();
     osKernelInitialize();
 
-    I2C_Handler* i2c_handler = new I2C_STM(&hi2c1, 0x68 << 1);
-    SPI_Handler* spi_handler = new SPI_STM(&hspi1, BARO_CS_PORT, BARO_CS_PIN);
-    IMU* imu = new MPU6050(*i2c_handler);
-    Baro* baro = new BMP390(*spi_handler);
+    SPI_Handler* spi_handler_baro = new SPI_STM(&hspi1, BARO_CS_PORT, BARO_CS_PIN);
+    SPI_Handler* spi_handler_imu = new SPI_STM(&hspi1, IMU_CS_PORT, IMU_CS_PIN);
+
+    bool init_status = true;
+    Flash* flash_memory = new MX25L128();
+    init_status &= flash_memory->init();
+    
+    IMU* imu = new LSM6DSO32(*i2c_handler);
+    Baro* baro = new MS5067(*spi_handler);
+
+    init_status &= imu->init();
+    init_status &= baro->init();
+
+    //fake memory location
+    flight_internal_data flight_data = flash_memory->read(0x00, 8, sizeof(flight_internal_data));
+
+    //CAN* canbus = new CAN();
+    //canbus->init(); 
+    // this should check the stack on boards on can, and load in what messages need to be send based on boards & settings
+
+    
     KalmanFilter* kalman = new KalmanFilter();
-    static flash_internal_data settings {
-        .main_height = 200,
-        .drouge_delay = 0,
-        .liftoff_thresh = 20
-    };
 
     //StateMachine* state_machine = new StateMachine(settings);
 
