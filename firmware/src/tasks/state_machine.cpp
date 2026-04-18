@@ -1,10 +1,9 @@
 #include "state_machine.h"
 
 namespace task{
-StateMachine::StateMachine(const flash_internal_data settings)
-    : main_height(settings.main_height),
-      drouge_delay(settings.drouge_delay),
-      liftoff_threshold(settings.liftoff_thresh)
+StateMachine::StateMachine(IMU *imu, Baro *baro, const flash_internal_data settings, osMessageQueueId_t can_queue, osMessageQueueId_t logger_queue)
+    : imu_(imu), baro_(baro), main_height(settings.main_height), drouge_delay(settings.drouge_delay),
+      liftoff_threshold(settings.liftoff_thresh), can_queue_(can_queue), logger_queue_(logger_queue), taskHandle_(nullptr)
 {
     // Initialize the state machine with function pointer array
     //to add 
@@ -30,16 +29,21 @@ void StateMachine::StartStateMachineEntry(void *argument) {
 void StateMachine::StartStateMachine() {
 
     printf("StateMachine started\n");
+    int time = 0;
+    float time_diff = 0;
+    flight_data raw_data;
+    flight_data old_data;
+    imu_data imu_data;
 
-        for (;;)
+    for (;;)
     {
         time = HAL_GetTick();
         time_diff = (time - old_data.time) / 1000.0f;
-        if (imu->update(&imu_data)){
+        if (imu_->update(&imu_data)){
             raw_data.core_data.acceleration = imu_data.acceleration;
             //printf("Got IMU\n");
         }
-        if (baro->update(&raw_data.core_data.barometer)){
+        if (baro_->update(&raw_data.core_data.barometer)){
             //printf("Got Baro\n");
         }
 
@@ -51,17 +55,16 @@ void StateMachine::StartStateMachine() {
         }
         kalman_filter_->update(raw_data.core_data.barometer.altitude, (raw_data.core_data.acceleration.y)); // y axis for test data
         kalman_filter_->update_values(&raw_data.prediction);
-        state_machine->update_state(raw_data.core_data, raw_data.prediction);
+        update_state(raw_data.core_data, raw_data.prediction);
 
-        printf("data %" PRIu32 "%f %f %f %d\n", time, raw_data.prediction.altitude, raw_data.prediction.velocity, raw_data.prediction.acceleration, state_machine->current_state);
-        if (raw_data.state != state_machine->current_state) {
-            printf("State changed at time %" PRIu32 " ms: %d -> %d \n", time, raw_data.state, state_machine->current_state);
+        printf("data %d %f %f %f %d\n", time, raw_data.prediction.altitude, raw_data.prediction.velocity, raw_data.prediction.acceleration, current_state);
+        if (raw_data.state != current_state) {
+            printf("State changed at time %d ms: %d -> %d \n", time, raw_data.state, current_state);
         }
-        raw_data.state = state_machine->current_state;
+        raw_data.state = current_state;
         old_data = raw_data;
-
-        // Delay (fake or real)
         osDelay(1000);
+    }
 }
 
 void StateMachine::update_state(const core_flight_data raw_data, prediction_data prediction)
@@ -170,60 +173,4 @@ void StateMachine::change_state(State new_state)
     }
 }
 
-
-
-//void StateMachine::run(void *pvParameters)
-//{
-    // printf("State Machine Task\n");
-    //AllQueuesArgs *args = static_cast<AllQueuesArgs *>(pvParameters);
-
-    //QueueHandle_t coreDataQueue = args->coreDataQueue;
-    //QueueHandle_t secDataQueue = args->secDataQueue;
-    //QueueHandle_t flightDataQueue = args->flightDataQueue;
-
-    //flight_data raw_data;
-    //flight_data old_data;
-    //flight_data processed_data;
-    //printf("State Machine Intialised\n");
-    //int time = 0;
-    //float time_diff = 0;
-//
-    //while (true)
-    //{
-    //    time = to_ms_since_boot(get_absolute_time());
-    //    time_diff = (time - old_data.core_data.time) / 1000.0f; // convert to seconds
-    //    //printf("Time diff: %f\n", time_diff);
-    //    //if (xQueueReceive(coreDataQueue, &raw_data.core_data, pdMS_TO_TICKS(100)) == pdTRUE)
-    //    //{
-    //        // process data in kalman filter
-    //        // printf("Got raw\n Got alt %f", raw_data.core_data.barometer.altitude);
-    //        //printf(" Got accel %f\n", raw_data.core_data.acceleration.x);
-    //   // }
-    //    if (xQueueReceive(secDataQueue, &raw_data.secondary_data, pdMS_TO_TICKS(100)) == pdTRUE)
-    //    {
-    //        // adds to queue, prob better way to do this
-    //        //printf("secondary data recived\n");
-    //    }
-    //    kalman_filter.predict(time_diff);
-    //    if (raw_data.state > 4)
-    //    {
-    //        //acceleration not relivant after apogee
-    //        raw_data.core_data.acceleration.y = 0.0000f;
-    //    }
-    //    kalman_filter.update(raw_data.core_data.barometer.altitude, (raw_data.core_data.acceleration.y)); // y axis for test data
-    //    kalman_filter.update_values(&raw_data.prediction);
-    //    update_state(raw_data.core_data, raw_data.prediction);
-    //    //printf("State Machine: %d\n", current_state);
-    //    //printf("Prediction: %f %f %f\n", raw_data.prediction.altitude, raw_data.prediction.velocity, raw_data.prediction.acceleration);
-//
-    //    printf("data %d %f %f %f %d\n", time, raw_data.prediction.altitude, raw_data.prediction.velocity, raw_data.prediction.acceleration, current_state);
-    //    raw_data.state = current_state;
-    //    //xQueueSend(flightDataQueue, &raw_data, pdMS_TO_TICKS(100));
-//
-    //    old_data = raw_data;
-    //    vTaskDelay(pdMS_TO_TICKS(read_data_delay));
-    //}
-//}
-
-// should take out prediction from core data
 }

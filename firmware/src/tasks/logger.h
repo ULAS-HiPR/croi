@@ -24,7 +24,7 @@ class Logger {
         struct LogMessage {
             uint32_t timestamp;
             imu_data imu;
-            state fsm_state;
+            //add in for croi
         };
 
     private:

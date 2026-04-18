@@ -1,4 +1,5 @@
 #include "data.h"
+#include <cstdint>
 #if F4
 #include "stm32f4xx_hal.h"
 #include "platform/stm_f4.h"
@@ -9,8 +10,12 @@
 #endif
 #include "cmsis_os.h"
 #include <data.h>
-#include "tools/state_machine.h"
+
 #include "tools/kalman_filter.h"
+
+#include "tasks/state_machine.h"
+#include "tasks/can.h"
+#include "tasks/logger.h"
 
 //Generic henders
 #include <sensor.h>
@@ -31,82 +36,23 @@
 void SystemClock_Config(void);
 void Error_Handler(void);
 
-struct FSM_TaskArgs {
-    IMU* imu;
-    Baro* baro;
-    KalmanFilter* kalman;
-    flash_internal_data settings;
+const osMessageQueueAttr_t canQueue_attributes = {
+  .name = "canQueue"
 };
 
-<<<<<<< HEAD
-void StartFSM(void *argument)
-{
-    auto* args = static_cast<FSM_TaskArgs*>(argument);
-
-    IMU* imu = args->imu;
-    Baro* baro = args->baro;
-    KalmanFilter* kalman_filter = args->kalman;
-    StateMachine* state_machine = new StateMachine(args->settings);
-
-    flight_data raw_data;
-    flight_data old_data;
-    flight_data processed_data;
-    imu_data imu_data;
-
-    uint32_t time = HAL_GetTick();
-    float time_diff = 0;
-    for (;;)
-    {
-        time = HAL_GetTick();
-        time_diff = (time - old_data.time) / 1000.0f;
-        if (imu->update(&imu_data)){
-            raw_data.core_data.acceleration = imu_data.acceleration;
-            //printf("Got IMU\n");
-        }
-        if (baro->update(&raw_data.core_data.barometer)){
-            //printf("Got Baro\n");
-        }
-
-        kalman_filter->predict(time_diff);
-        if (raw_data.state > 4)
-        {
-            //acceleration not relivant after apogee
-            raw_data.core_data.acceleration.y = 0.0000f;
-        }
-        kalman_filter->update(raw_data.core_data.barometer.altitude, (raw_data.core_data.acceleration.y)); // y axis for test data
-        kalman_filter->update_values(&raw_data.prediction);
-        state_machine->update_state(raw_data.core_data, raw_data.prediction);
-
-        printf("data %lu %f %f %f %d\n", time, raw_data.prediction.altitude, raw_data.prediction.velocity, raw_data.prediction.acceleration, state_machine->current_state);
-        raw_data.state = state_machine->current_state;
-        old_data = raw_data;
-
-      osDelay(1000);
-    }
-}
-
-osThreadId_t blinkTaskHandle;
-
-const osThreadAttr_t blinkTask_attributes = {
-    "FSMTask",          // name
-    0,                    // attr_bits
-    nullptr,              // cb_mem
-    0,                    // cb_size
-    nullptr,              // stack_mem
-    256 * 4,              // stack_size
-    osPriorityNormal,     // priority
-    0,                    // tz_module
-    0                     // reserved
+const osMessageQueueAttr_t loggingQueue_attributes = {
+  .name = "loggingQueue"
 };
 
-=======
->>>>>>> 6d99526 (adding common tasks & importing correct sensors)
 
 int main(void)
 {
     HAL_Init();
     SystemClock_Config();
     osKernelInitialize();
+
+    osMessageQueueId_t canQueueHandle = osMessageQueueNew(16, sizeof(char), &canQueue_attributes);
+    osMessageQueueId_t loggingQueueHandle = osMessageQueueNew(16, sizeof(task::Logger::LogMessage), &loggingQueue_attributes);
 
     SPI_Handler* spi_handler_baro = new SPI_STM(&hspi1, BARO_CS_PORT, BARO_CS_PIN);
     SPI_Handler* spi_handler_imu = new SPI_STM(&hspi1, IMU_CS_PORT, IMU_CS_PIN);
@@ -115,32 +61,27 @@ int main(void)
     Flash* flash_memory = new MX25L128();
     init_status &= flash_memory->init();
     
-    IMU* imu = new LSM6DSO32(*i2c_handler);
-    Baro* baro = new MS5067(*spi_handler);
+    IMU* imu = new LSM6DSO32(*spi_handler_imu);
+    Baro* baro = new MS5607(*spi_handler_baro);
 
     init_status &= imu->init();
     init_status &= baro->init();
 
     //fake memory location
-    flight_internal_data flight_data = flash_memory->read(0x00, 8, sizeof(flight_internal_data));
+    uint8_t buffer[sizeof(flash_internal_data)];
+    bool read_correctly = flash_memory->read(0x00, &buffer[0], sizeof(flash_internal_data));
 
     //CAN* canbus = new CAN();
     //canbus->init(); 
     // this should check the stack on boards on can, and load in what messages need to be send based on boards & settings
 
-    
-    KalmanFilter* kalman = new KalmanFilter();
 
-    //StateMachine* state_machine = new StateMachine(settings);
+    static task::CAN can_task(canQueueHandle);
+    static task::Logger logger(flash_memory, loggingQueueHandle);
 
-    static FSM_TaskArgs fsm_args;
+    can_task.run();
+    logger.run();
 
-    fsm_args.imu = imu;
-    fsm_args.baro = baro;
-    fsm_args.kalman = kalman;
-    fsm_args.settings = settings;
-
-    osThreadNew(StartFSM, &fsm_args, &blinkTask_attributes);
 
       osKernelStart();
       // never get here 
