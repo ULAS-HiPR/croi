@@ -36,8 +36,12 @@
 void SystemClock_Config(void);
 void Error_Handler(void);
 
-const osMessageQueueAttr_t canQueue_attributes = {
-  .name = "canQueue"
+const osMessageQueueAttr_t canRQueue_attributes = {
+  .name = "canReciverQueue"
+};
+
+const osMessageQueueAttr_t canSQueue_attributes = {
+  .name = "canSenderQueue"
 };
 
 const osMessageQueueAttr_t loggingQueue_attributes = {
@@ -51,8 +55,9 @@ int main(void)
     SystemClock_Config();
     osKernelInitialize();
 
-    osMessageQueueId_t canQueueHandle = osMessageQueueNew(16, sizeof(char), &canQueue_attributes);
-    osMessageQueueId_t loggingQueueHandle = osMessageQueueNew(16, sizeof(task::Logger::LogMessage), &loggingQueue_attributes);
+    osMessageQueueId_t canReciverQueueHandle = osMessageQueueNew(16, sizeof(flight_data), &canRQueue_attributes);
+    osMessageQueueId_t canSenderQueueHandle = osMessageQueueNew(16, sizeof(flight_data), &canSQueue_attributes);
+    osMessageQueueId_t loggingQueueHandle = osMessageQueueNew(16, sizeof(flight_data), &loggingQueue_attributes);
 
     SPI_Handler* spi_handler_baro = new SPI_STM(&hspi1, BARO_CS_PORT, BARO_CS_PIN);
     SPI_Handler* spi_handler_imu = new SPI_STM(&hspi1, IMU_CS_PORT, IMU_CS_PIN);
@@ -77,12 +82,13 @@ int main(void)
     // this should check the stack on boards on can, and load in what messages need to be send based on boards & settings
 
 
-    static task::StateMachine state_machine(imu, baro, settings, canQueueHandle, loggingQueueHandle);
-    static task::CAN can_task(canQueueHandle);
+    static task::StateMachine state_machine(imu, baro, settings, canSenderQueueHandle, loggingQueueHandle);
+    static task::CAN can_task(canSenderQueueHandle, canReciverQueueHandle);
     static task::Logger logger(flash_memory, loggingQueueHandle);
 
     can_task.run();
     logger.run();
+    state_machine.run();
 
 
       osKernelStart();

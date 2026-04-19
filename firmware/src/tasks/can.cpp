@@ -19,14 +19,21 @@ void CAN::StartCANEntry(void *argument) {
 void CAN::StartCAN() {
 
     printf("CAN started\n");
-
+    flight_data data_to_send;
     for (;;) {
         //char data = radio.read();
-        char data = 'r'; // placeholder for testing
         //  get data from can bus
         // parse data & send to controller
-        printf("Parsed message: %d\n", data);
-        osMessageQueuePut(can_queue_, &data, 0, 0);
+        osStatus_t status;
+        status = osMessageQueueGet(can_s_queue_, &data_to_send, NULL, 0U);   
+
+        if (status == osOK) {
+            printf("Parsed message: %d\n", data_to_send.state);
+            //cans.send(data_to_send);
+        }
+
+        // if can message reciver: osMessageQueuePut(can_queue_, &data, 0, 0);
+        
         osDelay(1000);  
     }
 }

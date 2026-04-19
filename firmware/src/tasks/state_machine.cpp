@@ -62,6 +62,8 @@ void StateMachine::StartStateMachine() {
             printf("State changed at time %d ms: %d -> %d \n", time, raw_data.state, current_state);
         }
         raw_data.state = current_state;
+        osMessageQueuePut(can_queue_, &raw_data, 0, 0);
+        osMessageQueuePut(logger_queue_, &raw_data, 0, 0);
         old_data = raw_data;
         osDelay(1000);
     }
