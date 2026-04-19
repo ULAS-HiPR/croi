@@ -1,9 +1,9 @@
 #include "state_machine.h"
 
 namespace task{
-StateMachine::StateMachine(IMU *imu, Baro *baro, const flash_internal_data settings, osMessageQueueId_t can_queue, osMessageQueueId_t logger_queue)
-    : imu_(imu), baro_(baro), main_height(settings.main_height), drouge_delay(settings.drouge_delay),
-      liftoff_threshold(settings.liftoff_thresh), can_queue_(can_queue), logger_queue_(logger_queue), taskHandle_(nullptr)
+StateMachine::StateMachine(IMU *imu, Baro *baro, const flash_internal_data* settings, osMessageQueueId_t can_queue, osMessageQueueId_t logger_queue)
+    : imu_(imu), baro_(baro), main_height(settings->main_height), drouge_delay(settings->drouge_delay),
+      liftoff_threshold(settings->liftoff_thresh), can_queue_(can_queue), logger_queue_(logger_queue), taskHandle_(nullptr)
 {
     // Initialize the state machine with function pointer array
     //to add 

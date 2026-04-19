@@ -14,7 +14,7 @@
 namespace task{
 class StateMachine {
     public:
-        StateMachine(IMU *imu, Baro *baro, flash_internal_data settings, osMessageQueueId_t can_queue, osMessageQueueId_t logger_queue);
+        StateMachine(IMU *imu, Baro *baro, const flash_internal_data* settings, osMessageQueueId_t can_queue, osMessageQueueId_t logger_queue);
               
         //should put this in data.h
         enum State {

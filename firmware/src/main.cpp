@@ -70,12 +70,14 @@ int main(void)
     //fake memory location
     uint8_t buffer[sizeof(flash_internal_data)];
     bool read_correctly = flash_memory->read(0x00, &buffer[0], sizeof(flash_internal_data));
+    flash_internal_data* settings = reinterpret_cast<flash_internal_data*>(buffer);
 
     //CAN* canbus = new CAN();
     //canbus->init(); 
     // this should check the stack on boards on can, and load in what messages need to be send based on boards & settings
 
 
+    static task::StateMachine state_machine(imu, baro, settings, canQueueHandle, loggingQueueHandle);
     static task::CAN can_task(canQueueHandle);
     static task::Logger logger(flash_memory, loggingQueueHandle);
 
