@@ -64,7 +64,7 @@ jobs:
       - name: Build STM firmware
         run: |
           cd firmware
-          pio run -e nucleo_f411re
+          pio run -e stm32f072c8t6
 
       - name: Upload STM firmware
         uses: actions/upload-artifact@v4
