@@ -33,9 +33,13 @@ void CAN::StartCAN() {
         }
 
         // if can message reciver: osMessageQueuePut(can_queue_, &data, 0, 0);
-        
+
         osDelay(1000);  
     }
+}
+ 
+uint* construct_can_message(flight_data data){
+    
 }
 
 char CAN::parse_message(char msg){

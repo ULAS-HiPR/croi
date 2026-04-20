@@ -19,6 +19,7 @@ class CAN {
         void StartCAN();
         static void StartCANEntry(void *argument);
         char parse_message(char msg);
+        uint* construct_can_message(flight_data data);
 
         //CAN& can_bus_;
         osMessageQueueId_t can_r_queue_;
