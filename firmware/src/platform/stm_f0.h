@@ -9,11 +9,6 @@
 #define LED_GPIO_PORT GPIOA 
 #define LED_GPIO_CLK_ENABLE() __HAL_RCC_GPIOA_CLK_ENABLE() 
 
-#define I2C_SCL_PIN GPIO_PIN_8 
-#define I2C_SDA_PIN GPIO_PIN_9 
-#define I2C_GPIO_PORT GPIOB 
-#define I2C_GPIO_CLK_ENABLE() __HAL_RCC_GPIOB_CLK_ENABLE() 
-
 #define SPI_SCK_PIN GPIO_PIN_5 
 #define SPI_MISO_PIN GPIO_PIN_6 
 #define SPI_MOSI_PIN GPIO_PIN_7 
@@ -21,10 +16,21 @@
 #define SPI_GPIO_CLK_ENABLE() __HAL_RCC_GPIOA_CLK_ENABLE() 
 
 #define BARO_CS_PIN GPIO_PIN_4
-#define BARO_CS_PORT GPIOA
+#define BARO_CS_PORT GPIOB
 
-// Extern handles for use by I2C/SPI handlers
-extern I2C_HandleTypeDef hi2c1;
+#define IMU_CS_PIN GPIO_PIN_11
+#define IMU_CS_PORT GPIOB
+
+#define ENV_CS_PIN GPIO_PIN_14
+#define ENV_CS_PORT GPIOB
+
+#define FLASH_CS_PIN GPIO_PIN_12
+#define FLASH_CS_PORT GPIOB
+
+#define ACCEL_CS_PIN GPIO_PIN_15
+#define ACCEL_CS_PORT GPIOB
+
+
 extern SPI_HandleTypeDef hspi1;
 
 // Initialization functions

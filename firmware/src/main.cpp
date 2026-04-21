@@ -11,10 +11,8 @@
 #include "cmsis_os.h"
 #include <data.h>
 
-#include "tools/kalman_filter.h"
-
 #include "tasks/state_machine.h"
-#include "tasks/can.h"
+#include "tasks/can_task.h"
 #include "tasks/logger.h"
 
 //Generic henders
@@ -22,7 +20,6 @@
 #include <IMU/IMU.h>
 #include <Baro/baro.h>
 #include <Flash/flash.h>
-#include <I2C/I2C_STM.h>
 #include <SPI/SPI_STM.h>
 
 //Specific sensors
@@ -83,7 +80,7 @@ int main(void)
 
 
     static task::StateMachine state_machine(imu, baro, settings, canSenderQueueHandle, loggingQueueHandle);
-    static task::CAN can_task(canSenderQueueHandle, canReciverQueueHandle);
+    static task::CAN_Task can_task(canSenderQueueHandle, canReciverQueueHandle);
     static task::Logger logger(flash_memory, loggingQueueHandle);
 
     can_task.run();
