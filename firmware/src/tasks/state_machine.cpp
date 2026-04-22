@@ -47,13 +47,19 @@ void StateMachine::StartStateMachine() {
             //printf("Got Baro\n");
         }
 
+        // kalman_filter_->predict(time_diff);
+        if (time_diff <= 0.0f) time_diff = 0.001f;
         kalman_filter_->predict(time_diff);
         if (raw_data.state > 4)
         {
             //acceleration not relivant after apogee
             raw_data.core_data.acceleration.y = 0.0000f;
         }
-        kalman_filter_->update(raw_data.core_data.barometer.altitude, (raw_data.core_data.acceleration.y)); // y axis for test data
+        // kalman_filter_->update(raw_data.core_data.barometer.altitude, (raw_data.core_data.acceleration.y)); // y axis for test data
+        kalman_filter_->update(raw_data.core_data.barometer.altitude,
+                        raw_data.core_data.acceleration.y,
+                        raw_data.core_data.acceleration.x,
+                        raw_data.core_data.acceleration.z);
         kalman_filter_->update_values(&raw_data.prediction);
         update_state(raw_data.core_data, raw_data.prediction);
 
@@ -82,10 +88,10 @@ void StateMachine::update_state(const core_flight_data raw_data, prediction_data
         check_calibrating_state_done();
         break;
     case State::READY:
-        check_ready_state_done(prediction.acceleration);
+        check_ready_state_done(raw_data.acceleration.y);
         break;
     case State::POWERED:
-        check_powered_state_done(prediction.acceleration);
+        check_powered_state_done(raw_data.acceleration.y);
         break;
     case State::COASTING:
         check_coasting_state_done(prediction.velocity);
@@ -108,8 +114,8 @@ void StateMachine::update_state(const core_flight_data raw_data, prediction_data
 
 void StateMachine::check_calibrating_state_done()
 {
-    // printf("State Machine\n");
-    change_state(State::READY);
+    if (kalman_filter_->is_calibrated())
+        change_state(State::READY);
     return;
 }
 
@@ -136,9 +142,9 @@ void StateMachine::check_powered_state_done(float accel)
 
 void StateMachine::check_coasting_state_done(float velocity)
 {
-    if (velocity < 0.0f)
+    if (kalman_filter_->is_apogee_confirmed())
     {
-        printf("State Machine: Drouge, velocity: %f\n", velocity);
+        printf("State Machine: Drouge, apogee confirmed\n");
         change_state(State::DROUGE);
     }
 }
@@ -165,14 +171,15 @@ void StateMachine::change_state(State new_state)
 {
     if (new_state != current_state)
     {
-        // add when need to confim states dont repear
-        //if (!called_once[new_state])
-        //{
-        //    state_handlers[new_state]();
-        //    called_once[new_state] = true;
-        //}
         current_state = new_state;
+        kalman_filter_->reset_apogee_confirmation();
+        switch (new_state) {
+            case State::READY:    kalman_filter_->set_phase_ready();     break;
+            case State::POWERED:  kalman_filter_->set_phase_thrusting(); break;
+            case State::COASTING: kalman_filter_->set_phase_coasting();  break;
+            case State::DROUGE:   kalman_filter_->set_phase_drogue();    break;
+            case State::MAIN:     kalman_filter_->set_phase_main();      break;
+            default: break;
+        }
     }
-}
-
-}
+}}
