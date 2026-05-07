@@ -2060,7 +2060,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 67.6148 104.14 0)
 			(effects
 				(font
@@ -2079,6 +2079,15 @@
 			)
 		)
 		(property "Description" "Unpolarized capacitor"
+			(at 68.58 107.95 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "SNAPEDA_PN" ""
 			(at 68.58 107.95 0)
 			(effects
 				(font
@@ -2375,6 +2384,15 @@
 				(hide yes)
 			)
 		)
+		(property "SNAPEDA_PN" ""
+			(at 62.23 107.95 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "130ea4a9-1fec-4edd-ab44-e9ca204201dd")
 		)
@@ -2450,6 +2468,15 @@
 				(hide yes)
 			)
 		)
+		(property "SNAPEDA_PN" ""
+			(at 154.94 85.09 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "6a512f54-a0ae-4d33-9bba-d560bf6999db")
 		)
@@ -2498,7 +2525,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 130.5052 88.9 0)
 			(effects
 				(font
@@ -2517,6 +2544,15 @@
 			)
 		)
 		(property "Description" "Unpolarized capacitor"
+			(at 129.54 85.09 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "SNAPEDA_PN" ""
 			(at 129.54 85.09 0)
 			(effects
 				(font
@@ -2592,6 +2628,15 @@
 			)
 		)
 		(property "Description" "Unpolarized capacitor"
+			(at 194.31 85.09 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "SNAPEDA_PN" ""
 			(at 194.31 85.09 0)
 			(effects
 				(font
@@ -2744,6 +2789,15 @@
 				(hide yes)
 			)
 		)
+		(property "SNAPEDA_PN" ""
+			(at 74.93 100.33 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "2"
 			(uuid "e4e52a29-b4d5-44cb-bb51-d803493e2223")
 		)
@@ -2811,6 +2865,15 @@
 			)
 		)
 		(property "Description" "Unpolarized capacitor"
+			(at 167.64 85.09 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "SNAPEDA_PN" ""
 			(at 167.64 85.09 0)
 			(effects
 				(font
@@ -2938,7 +3001,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 143.2052 88.9 0)
 			(effects
 				(font
@@ -2957,6 +3020,15 @@
 			)
 		)
 		(property "Description" "Unpolarized capacitor"
+			(at 142.24 85.09 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "SNAPEDA_PN" ""
 			(at 142.24 85.09 0)
 			(effects
 				(font
@@ -3013,7 +3085,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 149.5552 88.9 0)
 			(effects
 				(font
@@ -3032,6 +3104,15 @@
 			)
 		)
 		(property "Description" "Unpolarized capacitor"
+			(at 148.59 85.09 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "SNAPEDA_PN" ""
 			(at 148.59 85.09 0)
 			(effects
 				(font
@@ -3186,6 +3267,15 @@
 				(hide yes)
 			)
 		)
+		(property "SNAPEDA_PN" ""
+			(at 129.54 96.52 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "c514b8b7-0b0d-4208-973b-f1582960404b")
 		)
@@ -3253,6 +3343,15 @@
 			)
 		)
 		(property "Description" "Unpolarized capacitor"
+			(at 58.42 86.36 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "SNAPEDA_PN" ""
 			(at 58.42 86.36 0)
 			(effects
 				(font
@@ -3329,6 +3428,15 @@
 			)
 		)
 		(property "Description" ""
+			(at 120.65 109.22 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "SNAPEDA_PN" ""
 			(at 120.65 109.22 0)
 			(effects
 				(font
@@ -3469,6 +3577,15 @@
 		)
 		(property "Description" "Resistor"
 			(at 60.96 95.25 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "SNAPEDA_PN" ""
+			(at 60.96 95.25 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3693,6 +3810,15 @@
 				(hide yes)
 			)
 		)
+		(property "SNAPEDA_PN" ""
+			(at 181.61 83.82 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "f40f25bc-54c3-4460-badc-723ab3176fd7")
 		)
@@ -3756,7 +3882,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 73.9648 104.14 0)
 			(effects
 				(font
@@ -3775,6 +3901,15 @@
 			)
 		)
 		(property "Description" "Unpolarized capacitor"
+			(at 74.93 107.95 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "SNAPEDA_PN" ""
 			(at 74.93 107.95 0)
 			(effects
 				(font
@@ -3856,6 +3991,15 @@
 				(hide yes)
 			)
 		)
+		(property "SNAPEDA_PN" ""
+			(at 64.77 86.36 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "2"
 			(uuid "7d9817b8-f0cc-426c-acc6-7c3d917399dd")
 		)
@@ -3904,7 +4048,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 136.8552 88.9 0)
 			(effects
 				(font
@@ -3923,6 +4067,15 @@
 			)
 		)
 		(property "Description" "Unpolarized capacitor"
+			(at 135.89 85.09 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "SNAPEDA_PN" ""
 			(at 135.89 85.09 0)
 			(effects
 				(font

@@ -23,6 +23,10 @@
 #define BARO_CS_PIN GPIO_PIN_4
 #define BARO_CS_PORT GPIOA
 
+#define FLASH_CS_PIN GPIO_PIN_12
+#define FLASH_CS_PORT GPIOB
+#define FLASH_CS_GPIO_CLK_ENABLE() __HAL_RCC_GPIOB_CLK_ENABLE()
+
 // Extern handles for use by I2C/SPI handlers
 extern I2C_HandleTypeDef hi2c1;
 extern SPI_HandleTypeDef hspi1;
