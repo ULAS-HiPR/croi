@@ -58,6 +58,8 @@
     #define CMSIS_device_header "stm32f4xx.h"
 #elif defined(STM32F0)
     #define CMSIS_device_header "stm32f0xx.h"
+#elif defined(LINUX)
+    #define CMSIS_device_header "linux_device_stub.h"
 #else
     #error "Unsupported MCU"
 #endif
@@ -67,6 +69,8 @@
     #define FREERTOS_CPU_M4 1
 #elif defined(STM32F0)
     #define FREERTOS_CPU_M0 1
+#elif defined(LINUX)
+    #define FREERTOS_CPU_POSIX 1
 #else
     #error "Unknown MCU family"
 #endif
@@ -79,21 +83,31 @@
 #define configSUPPORT_DYNAMIC_ALLOCATION         1
 #define configUSE_IDLE_HOOK                      0
 #define configUSE_TICK_HOOK                      0
+#if !defined(LINUX)
 #define configCPU_CLOCK_HZ                       ( SystemCoreClock )
+#endif
 #define configTICK_RATE_HZ                       ((TickType_t)1000)
 
 #if FREERTOS_CPU_M4
 #define configMAX_PRIORITIES                     ( 56 )
 #elif FREERTOS_CPU_M0
 #define configMAX_PRIORITIES                     ( 8 )
+#elif FREERTOS_CPU_POSIX
+#define configMAX_PRIORITIES                     ( 7 )
 #endif
 
+#if FREERTOS_CPU_POSIX
+#define configMINIMAL_STACK_SIZE                 ((uint16_t)1000)
+#else
 #define configMINIMAL_STACK_SIZE                 ((uint16_t)128)
+#endif
 
 #if FREERTOS_CPU_M4
 #define configTOTAL_HEAP_SIZE                    ((size_t)15360)
 #elif FREERTOS_CPU_M0
 #define configTOTAL_HEAP_SIZE                    ((size_t)6144)
+#elif FREERTOS_CPU_POSIX
+#define configTOTAL_HEAP_SIZE                    ((size_t)(64 * 1024))
 #endif
 
 #define configMAX_TASK_NAME_LEN                  ( 16 )
@@ -104,11 +118,7 @@
 #define configUSE_RECURSIVE_MUTEXES              1
 #define configUSE_COUNTING_SEMAPHORES            1
 
-#if FREERTOS_CPU_M4
-#define configUSE_PORT_OPTIMISED_TASK_SELECTION  1
-#else
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION  0
-#endif
 
 /* USER CODE BEGIN MESSAGE_BUFFER_LENGTH_TYPE */
 /* Defaults to size_t for backward compatibility, but can be changed
@@ -156,39 +166,27 @@ to exclude the API function. */
  */
 #define USE_FreeRTOS_HEAP_4
 
-/* Cortex-M specific definitions. */
+/* Cortex-M specific definitions (not used on Linux/POSIX). */
 #if FREERTOS_CPU_M4
 
  #define configPRIO_BITS         4
-
- /* The lowest interrupt priority that can be used in a call to a "set priority"
- function. */
  #define configLIBRARY_LOWEST_INTERRUPT_PRIORITY   15
-
- /* The highest interrupt priority that can be used by any interrupt service
- routine that makes calls to interrupt safe FreeRTOS API functions.  DO NOT CALL
- INTERRUPT SAFE FREERTOS API FUNCTIONS FROM ANY INTERRUPT THAT HAS A HIGHER
- PRIORITY THAN THIS! (higher priorities are lower numeric values. */
  #define configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY 5
-
- /* Interrupt priorities used by the kernel port layer itself.  These are generic
- to all Cortex-M ports, and do not rely on any particular library functions. */
  #define configKERNEL_INTERRUPT_PRIORITY \
      ( configLIBRARY_LOWEST_INTERRUPT_PRIORITY << (8 - configPRIO_BITS) )
-
  #define configMAX_SYSCALL_INTERRUPT_PRIORITY \
      ( configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY << (8 - configPRIO_BITS) )
 
 #elif FREERTOS_CPU_M0
 
  #define configPRIO_BITS         2
-
  #define configLIBRARY_LOWEST_INTERRUPT_PRIORITY   3
-
  #define configKERNEL_INTERRUPT_PRIORITY \
      ( configLIBRARY_LOWEST_INTERRUPT_PRIORITY << (8 - configPRIO_BITS) )
-
  #define configMAX_SYSCALL_INTERRUPT_PRIORITY 0
+
+#elif FREERTOS_CPU_POSIX
+ #define configNUM_THREAD_LOCAL_STORAGE_POINTERS 1
 
 #endif
 
@@ -199,9 +197,11 @@ header file. */
 /* USER CODE END 1 */
 
 /* Definitions that map the FreeRTOS port interrupt handlers to their CMSIS
-standard names. */
+standard names (ARM only). */
+#if !defined(LINUX)
 #define vPortSVCHandler    SVC_Handler
 #define xPortPendSVHandler PendSV_Handler
+#endif
 
 /* IMPORTANT: After 10.3.1 update, Systick_Handler comes from NVIC (if SYS timebase = systick), otherwise from cmsis_os2.c */
 
