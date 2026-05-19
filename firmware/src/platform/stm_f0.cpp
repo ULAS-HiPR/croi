@@ -72,14 +72,18 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* hspi)
     GPIO_InitStruct.Alternate = GPIO_AF0_SPI1;
     HAL_GPIO_Init(SPI_GPIO_PORT, &GPIO_InitStruct);
 
-    GPIO_InitStruct.Pin = BARO_CS_PIN;
+    GPIO_InitStruct.Pin = BARO_CS_PIN |
+                           IMU_CS_PIN |
+                           FLASH_CS_PIN |
+                           BME680_CS_PIN |
+                           ADXL375_CS_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-    HAL_GPIO_Init(BARO_CS_PORT, &GPIO_InitStruct);
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
     HAL_GPIO_WritePin(BARO_CS_PORT, BARO_CS_PIN, GPIO_PIN_SET);
-
-    GPIO_InitStruct.Pin = FLASH_CS_PIN;
-    HAL_GPIO_Init(FLASH_CS_PORT, &GPIO_InitStruct);
+    HAL_GPIO_WritePin(IMU_CS_PORT, IMU_CS_PIN, GPIO_PIN_SET);
     HAL_GPIO_WritePin(FLASH_CS_PORT, FLASH_CS_PIN, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(BME680_CS_PORT, BME680_CS_PIN, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(ADXL375_CS_PORT, ADXL375_CS_PIN, GPIO_PIN_SET);
 }

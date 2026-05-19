@@ -1,56 +1,17 @@
 #include "stm32f0xx_hal.h"
-#include "cmsis_os.h"
-#include "platform/stm_f0.h"
 
 #include <cstddef>
 #include <cstdint>
-#include <cstdio>
-#include <cstring>
-
-#include <SPI/SPI_STM.h>
-#include <Flash/MX25L128.h>
 
 #define BUZZER_GPIO_PORT GPIOB
 #define BUZZER_GPIO_PIN GPIO_PIN_0
-
-#define FLASH_TEST_SECTOR_ADDR (MX25_FLASH_SIZE - MX25_SECTOR_SIZE)
-#define FLASH_TEST_ADDR (FLASH_TEST_SECTOR_ADDR + 128U)
-#define FLASH_TEST_LENGTH 300U
-
-#define DEBUG_ATTACH_WINDOW_MS 5000U
 #define BUZZER_TIMER_TICK_HZ 1000000U
 
 TIM_HandleTypeDef htim3;
 
-void SystemClock_Config(void);
-void Error_Handler(void);
-void HAL_TIM_MspPostInit(TIM_HandleTypeDef* htim);
-
-static void MX_TIM3_Init(void);
-static void StartFlashTest(void* argument);
-static void StartBuzzerSongs(void* argument);
-
-static SPI_Handler* spi_handler = nullptr;
-static MX25L128* flash = nullptr;
-
-enum FlashTestState : uint8_t {
-    FlashTestRunning,
-    FlashTestPassed,
-    FlashTestFailed,
-};
-
-static volatile FlashTestState flash_test_state = FlashTestRunning;
-
 struct Note {
     uint16_t frequency_hz;
     uint16_t duration_ms;
-};
-
-struct Song {
-    const char* name;
-    const Note* notes;
-    std::size_t note_count;
-    uint16_t pause_ms;
 };
 
 static constexpr uint16_t REST = 0;
@@ -73,11 +34,13 @@ static constexpr uint16_t NOTE_A5 = 880;
 #define ARRAY_LEN(array) (sizeof(array) / sizeof((array)[0]))
 
 static const Note startup_chime[] = {
-    {NOTE_C5, 90}, {NOTE_E5, 90}, {NOTE_G5, 130}, {REST, 80},
+    {2400, 80}, {REST, 100}, {2400, 80}, {REST, 100}, {2400, 80}, {REST, 300},
 };
 
-static const Note flash_failed_alarm[] = {
-    {NOTE_G4, 180}, {NOTE_E4, 180}, {NOTE_C4, 260}, {REST, 180},
+static const Note diagnostic_ladder[] = {
+    {300, 220}, {600, 220}, {900, 220}, {1200, 220},
+    {1600, 220}, {2000, 220}, {2400, 360}, {2800, 220},
+    {3200, 220}, {2400, 500}, {REST, 500},
 };
 
 static const Note ode_to_joy[] = {
@@ -122,145 +85,30 @@ static const Note entertainer[] = {
     {NOTE_D5, 240}, {NOTE_C5, 520},
 };
 
+struct Song {
+    const Note* notes;
+    std::size_t note_count;
+    uint16_t pause_ms;
+};
+
 static const Song playlist[] = {
-    {"Ode to Joy", ode_to_joy, ARRAY_LEN(ode_to_joy), 800},
-    {"Drunken Sailor", drunken_sailor, ARRAY_LEN(drunken_sailor), 800},
-    {"Can-Can", can_can, ARRAY_LEN(can_can), 800},
-    {"The Entertainer", entertainer, ARRAY_LEN(entertainer), 1200},
+    {ode_to_joy, ARRAY_LEN(ode_to_joy), 800},
+    {drunken_sailor, ARRAY_LEN(drunken_sailor), 800},
+    {can_can, ARRAY_LEN(can_can), 800},
+    {entertainer, ARRAY_LEN(entertainer), 1200},
 };
 
-const osThreadAttr_t flashTask_attributes = {
-    "FlashTask",
-    0,
-    nullptr,
-    0,
-    nullptr,
-    1024,
-    osPriorityNormal,
-    0,
-    0,
-};
+void SystemClock_Config(void);
+void Error_Handler(void);
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef* htim);
 
-const osThreadAttr_t buzzerTask_attributes = {
-    "BuzzerTask",
-    0,
-    nullptr,
-    0,
-    nullptr,
-    768,
-    osPriorityLow,
-    0,
-    0,
-};
-
-int main(void)
-{
-    HAL_Init();
-
-    HAL_Delay(DEBUG_ATTACH_WINDOW_MS);
-
-    SystemClock_Config();
-
-    MX_SPI1_Init();
-    MX_TIM3_Init();
-
-    spi_handler = new SPI_STM(&hspi1, FLASH_CS_PORT, FLASH_CS_PIN);
-    flash = new MX25L128(*spi_handler);
-
-    osKernelInitialize();
-    osThreadNew(StartFlashTest, nullptr, &flashTask_attributes);
-    osThreadNew(StartBuzzerSongs, nullptr, &buzzerTask_attributes);
-    osKernelStart();
-
-    while (1) {}
-}
-
-static void flash_fail(const char* reason)
-{
-    printf("Flash test FAILED: %s\n", reason);
-    flash_test_state = FlashTestFailed;
-
-    while (1) {
-        osDelay(1000);
-    }
-}
-
-static bool buffer_is_erased(const uint8_t* buffer, std::size_t length)
-{
-    for (std::size_t i = 0; i < length; ++i) {
-        if (buffer[i] != 0xFFU) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-static void StartFlashTest(void* argument)
-{
-    (void)argument;
-
-    static uint8_t write_data[FLASH_TEST_LENGTH];
-    static uint8_t read_data[FLASH_TEST_LENGTH];
-
-    printf("Flash test starting. Test sector: 0x%06lX\n",
-           static_cast<unsigned long>(FLASH_TEST_SECTOR_ADDR));
-
-    if (flash == nullptr) {
-        flash_fail("flash object missing");
-    }
-
-    if (!flash->init()) {
-        printf("Flash JEDEC ID read as 0x%06lX\n",
-               static_cast<unsigned long>(flash->jedec_id()));
-        flash_fail("JEDEC init/id check");
-    }
-
-    printf("Flash JEDEC ID: 0x%06lX\n",
-           static_cast<unsigned long>(flash->jedec_id()));
-
-    for (std::size_t i = 0; i < FLASH_TEST_LENGTH; ++i) {
-        write_data[i] = static_cast<uint8_t>((i * 37U) ^ 0xA5U);
-        read_data[i] = 0;
-    }
-
-    if (!flash->erase(FLASH_TEST_SECTOR_ADDR, MX25_SECTOR_SIZE)) {
-        flash_fail("erase");
-    }
-
-    if (!flash->read(FLASH_TEST_ADDR, read_data, FLASH_TEST_LENGTH)) {
-        flash_fail("blank read");
-    }
-
-    if (!buffer_is_erased(read_data, FLASH_TEST_LENGTH)) {
-        flash_fail("blank verify");
-    }
-
-    if (!flash->write(FLASH_TEST_ADDR, write_data, FLASH_TEST_LENGTH)) {
-        flash_fail("page program");
-    }
-
-    std::memset(read_data, 0, FLASH_TEST_LENGTH);
-
-    if (!flash->read(FLASH_TEST_ADDR, read_data, FLASH_TEST_LENGTH)) {
-        flash_fail("readback");
-    }
-
-    if (std::memcmp(write_data, read_data, FLASH_TEST_LENGTH) != 0) {
-        flash_fail("readback verify");
-    }
-
-    printf("Flash erase/write/read verify OK\n");
-    flash_test_state = FlashTestPassed;
-
-    while (1) {
-        osDelay(1000);
-    }
-}
+static void MX_TIM3_Init(void);
 
 static void Buzzer_Off(void)
 {
-    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, 0);
+    if (htim3.Instance != nullptr) {
+        __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, 0);
+    }
 }
 
 static void Buzzer_SetFrequency(uint16_t frequency_hz)
@@ -287,11 +135,11 @@ static void PlayNote(const Note& note)
     Buzzer_SetFrequency(note.frequency_hz);
 
     if (note.duration_ms > 30U && note.frequency_hz != REST) {
-        osDelay(note.duration_ms - 20U);
+        HAL_Delay(note.duration_ms - 20U);
         Buzzer_Off();
-        osDelay(20U);
+        HAL_Delay(20U);
     } else {
-        osDelay(note.duration_ms);
+        HAL_Delay(note.duration_ms);
         Buzzer_Off();
     }
 }
@@ -303,37 +151,33 @@ static void PlayNotes(const Note* notes, std::size_t note_count)
     }
 }
 
-static void PlaySong(const Song& song)
+static void Sweep(uint16_t start_hz, uint16_t end_hz, int16_t step_hz, uint16_t hold_ms)
 {
-    printf("Playing %s\n", song.name);
-    PlayNotes(song.notes, song.note_count);
+    int32_t frequency = start_hz;
+
+    while ((step_hz > 0 && frequency <= end_hz) ||
+           (step_hz < 0 && frequency >= end_hz)) {
+        Buzzer_SetFrequency(static_cast<uint16_t>(frequency));
+        HAL_Delay(hold_ms);
+        frequency += step_hz;
+    }
+
     Buzzer_Off();
-    osDelay(song.pause_ms);
+    HAL_Delay(150);
 }
 
-static void StartBuzzerSongs(void* argument)
+int main(void)
 {
-    (void)argument;
-
-    PlayNotes(startup_chime, ARRAY_LEN(startup_chime));
-
-    while (flash_test_state == FlashTestRunning) {
-        osDelay(50);
-    }
-
-    if (flash_test_state == FlashTestFailed) {
-        while (1) {
-            PlayNotes(flash_failed_alarm, ARRAY_LEN(flash_failed_alarm));
-            osDelay(350);
-        }
-    }
+    HAL_Init();
+    SystemClock_Config();
+    MX_TIM3_Init();
 
     while (1) {
-        for (std::size_t i = 0; i < ARRAY_LEN(playlist); ++i) {
-            PlaySong(playlist[i]);
-        }
         Buzzer_Off();
-        osDelay(DEBUG_ATTACH_WINDOW_MS);
+        HAL_Delay(5000);
+
+        Buzzer_SetFrequency(2400);
+        HAL_Delay(5000);
     }
 }
 
@@ -342,7 +186,7 @@ static void MX_TIM3_Init(void)
     TIM_OC_InitTypeDef config = {0};
 
     uint32_t timer_clock = HAL_RCC_GetPCLK1Freq();
-    uint32_t prescaler = (timer_clock / BUZZER_TIMER_TICK_HZ);
+    uint32_t prescaler = timer_clock / BUZZER_TIMER_TICK_HZ;
     if (prescaler == 0U) {
         prescaler = 1U;
     }
@@ -426,5 +270,6 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef* htim)
 void Error_Handler(void)
 {
     __disable_irq();
+    Buzzer_Off();
     while (1) {}
 }
