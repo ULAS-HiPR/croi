@@ -32,9 +32,9 @@
 
 
 extern SPI_HandleTypeDef hspi1;
+extern CAN_HandleTypeDef hcan;
 
 // Initialization functions
-void MX_I2C1_Init();
 void MX_SPI1_Init();
 
 #endif // STM_F4_H

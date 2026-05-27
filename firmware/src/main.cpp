@@ -8,11 +8,12 @@
 #include "stm32f0xx_hal.h"
 #include "platform/stm_f0.h"
 #endif
+#include "platform/hal_time.h"
 #include "cmsis_os.h"
 #include <data.h>
 
 #include "tasks/state_machine.h"
-#include "tasks/can_task.h"
+#include "tasks/CAN_task.h"
 #include "tasks/logger.h"
 
 //Generic henders
@@ -21,6 +22,12 @@
 #include <Baro/baro.h>
 #include <Flash/flash.h>
 #include <SPI/SPI_STM.h>
+#include <CAN/CAN_Handler.h>
+#if F4
+#include <CAN/CAN_Mock.h>
+#elif F0
+#include <CAN/CAN_STM.h>
+#endif
 
 //Specific sensors
 #include <IMU/LSM6DSO32.h>
@@ -52,15 +59,16 @@ int main(void)
     SystemClock_Config();
     osKernelInitialize();
 
-    osMessageQueueId_t canReciverQueueHandle = osMessageQueueNew(16, sizeof(flight_data), &canRQueue_attributes);
-    osMessageQueueId_t canSenderQueueHandle = osMessageQueueNew(16, sizeof(flight_data), &canSQueue_attributes);
-    osMessageQueueId_t loggingQueueHandle = osMessageQueueNew(16, sizeof(flight_data), &loggingQueue_attributes);
+    osMessageQueueId_t canReciverQueueHandle = osMessageQueueNew(8, sizeof(flight_data), &canRQueue_attributes);
+    osMessageQueueId_t canSenderQueueHandle = osMessageQueueNew(8, sizeof(flight_data), &canSQueue_attributes);
+    osMessageQueueId_t loggingQueueHandle = osMessageQueueNew(8, sizeof(flight_data), &loggingQueue_attributes);
 
     SPI_Handler* spi_handler_baro = new SPI_STM(&hspi1, BARO_CS_PORT, BARO_CS_PIN);
     SPI_Handler* spi_handler_imu = new SPI_STM(&hspi1, IMU_CS_PORT, IMU_CS_PIN);
+    SPI_Handler* spi_handler_flash = new SPI_STM(&hspi1, FLASH_CS_PORT, FLASH_CS_PIN);
 
     bool init_status = true;
-    Flash* flash_memory = new MX25L128();
+    Flash* flash_memory = new MX25L128(*spi_handler_flash);
     init_status &= flash_memory->init();
     
     IMU* imu = new LSM6DSO32(*spi_handler_imu);
@@ -74,13 +82,14 @@ int main(void)
     bool read_correctly = flash_memory->read(0x00, &buffer[0], sizeof(flash_internal_data));
     flash_internal_data* settings = reinterpret_cast<flash_internal_data*>(buffer);
 
-    //CAN* canbus = new CAN();
-    //canbus->init(); 
-    // this should check the stack on boards on can, and load in what messages need to be send based on boards & settings
-
-
+    #if F4
+    CAN_Handler* canbus = new CAN_MOCK();
+    #elif F0
+    CAN_Handler* canbus = new CAN_STM(&hcan);
+    #endif
+  
     static task::StateMachine state_machine(imu, baro, settings, canSenderQueueHandle, loggingQueueHandle);
-    static task::CAN_Task can_task(canSenderQueueHandle, canReciverQueueHandle);
+    static task::CAN_task can_task(*canbus, canSenderQueueHandle, canReciverQueueHandle);
     static task::Logger logger(flash_memory, loggingQueueHandle);
 
     can_task.run();
@@ -133,6 +142,7 @@ void SystemClock_Config(void)
   }
 }
 
+#ifdef F0
 /**
   * @brief  Period elapsed callback in non blocking mode
   * @note   This function is called  when TIM6 interrupt took place, inside
@@ -148,12 +158,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   /* USER CODE END Callback 0 */
   if (htim->Instance == TIM6)
   {
-    HAL_IncTick();
-  }
+        HAL_IncTick();
+    }
   /* USER CODE BEGIN Callback 1 */
 
   /* USER CODE END Callback 1 */
 }
+#endif // F0
 
 /**
   * @brief  This function is executed in case of error occurrence.

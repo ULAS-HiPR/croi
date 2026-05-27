@@ -40,7 +40,7 @@ void StateMachine::StartStateMachine() {
         time = HAL_GetTick();
         time_diff = (time - old_data.time) / 1000.0f;
         if (imu_->update(&imu_data)){
-            raw_data.core_data.acceleration = imu_data.acceleration;
+            raw_data.core_data.imu.acceleration = imu_data.acceleration;
             //printf("Got IMU\n");
         }
         if (baro_->update(&raw_data.core_data.barometer)){
@@ -51,9 +51,9 @@ void StateMachine::StartStateMachine() {
         if (raw_data.state > 4)
         {
             //acceleration not relivant after apogee
-            raw_data.core_data.acceleration.y = 0.0000f;
+            raw_data.core_data.imu.acceleration.y = 0.0000f;
         }
-        kalman_filter_->update(raw_data.core_data.barometer.altitude, (raw_data.core_data.acceleration.y)); // y axis for test data
+        kalman_filter_->update(raw_data.core_data.barometer.altitude, (raw_data.core_data.imu.acceleration.y)); // y axis for test data
         kalman_filter_->update_values(&raw_data.prediction);
         update_state(raw_data.core_data, raw_data.prediction);
 

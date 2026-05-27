@@ -91,7 +91,7 @@
 #define configMINIMAL_STACK_SIZE                 ((uint16_t)128)
 
 #if FREERTOS_CPU_M4
-#define configTOTAL_HEAP_SIZE                    ((size_t)15360)
+#define configTOTAL_HEAP_SIZE                    ((size_t)(6144))
 #elif FREERTOS_CPU_M0
 #define configTOTAL_HEAP_SIZE                    ((size_t)6144)
 #endif
@@ -105,7 +105,7 @@
 #define configUSE_COUNTING_SEMAPHORES            1
 
 #if FREERTOS_CPU_M4
-#define configUSE_PORT_OPTIMISED_TASK_SELECTION  1
+#define configUSE_PORT_OPTIMISED_TASK_SELECTION  0
 #else
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION  0
 #endif
@@ -181,14 +181,24 @@ to exclude the API function. */
 
 #elif FREERTOS_CPU_M0
 
- #define configPRIO_BITS         2
+ #define configPRIO_BITS         2 
 
- #define configLIBRARY_LOWEST_INTERRUPT_PRIORITY   3
+ /* The lowest interrupt priority that can be used in a call to a "set priority"
+ function. */
+ #define configLIBRARY_LOWEST_INTERRUPT_PRIORITY   3 
 
- #define configKERNEL_INTERRUPT_PRIORITY \
-     ( configLIBRARY_LOWEST_INTERRUPT_PRIORITY << (8 - configPRIO_BITS) )
-
- #define configMAX_SYSCALL_INTERRUPT_PRIORITY 0
+ /* The highest interrupt priority that can be used by any interrupt service
+ routine that makes calls to interrupt safe FreeRTOS API functions.  DO NOT CALL
+ INTERRUPT SAFE FREERTOS API FUNCTIONS FROM ANY INTERRUPT THAT HAS A HIGHER
+ PRIORITY THAN THIS! (higher priorities are lower numeric values. */
+ #define configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY 3 
+ 
+ /* Interrupt priorities used by the kernel port layer itself.  These are generic
+ to all Cortex-M ports, and do not rely on any particular library functions. */
+ #define configKERNEL_INTERRUPT_PRIORITY 		( configLIBRARY_LOWEST_INTERRUPT_PRIORITY << (8 - configPRIO_BITS) )
+ /* !!!! configMAX_SYSCALL_INTERRUPT_PRIORITY must not be set to zero !!!!
+ See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
+ #define configMAX_SYSCALL_INTERRUPT_PRIORITY 	( configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY << (8 - configPRIO_BITS) )
 
 #endif
 
@@ -205,7 +215,7 @@ standard names. */
 
 /* IMPORTANT: After 10.3.1 update, Systick_Handler comes from NVIC (if SYS timebase = systick), otherwise from cmsis_os2.c */
 
-#define USE_CUSTOM_SYSTICK_HANDLER_IMPLEMENTATION 0
+#define USE_CUSTOM_SYSTICK_HANDLER_IMPLEMENTATION 0 
 
 /* USER CODE BEGIN Defines */
 /* Section where parameter definitions can be added (for instance, to override default ones in FreeRTOS.h) */

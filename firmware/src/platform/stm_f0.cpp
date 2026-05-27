@@ -1,22 +1,37 @@
+#if F0
 #include "stm_f0.h"
 
+CAN_HandleTypeDef hcan;
 SPI_HandleTypeDef hspi1;
 
-
-void MX_SPI1_Init()
+void MX_CAN_Init()
 {
-    hspi1.Instance = SPI1;
+    hcan.Instance = CAN;
 
-    hspi1.Init.Mode = SPI_MODE_MASTER;
-    hspi1.Init.Direction = SPI_DIRECTION_2LINES;
-    hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
-    hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
-    hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
-    hspi1.Init.NSS = SPI_NSS_SOFT;
-    hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
-    hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
-    hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
-    hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+    hcan.Init.Prescaler = 16;
+    hcan.Init.Mode = CAN_MODE_NORMAL;
+    hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
+    hcan.Init.TimeSeg1 = CAN_BS1_13TQ;
+    hcan.Init.TimeSeg2 = CAN_BS2_2TQ;
 
-    HAL_SPI_Init(&hspi1);
+    HAL_CAN_Init(&hcan);
 }
+
+void HAL_CAN_MspInit(CAN_HandleTypeDef* hcan)
+{
+    if (hcan->Instance != CAN) return;
+
+    __HAL_RCC_CAN1_CLK_ENABLE();
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+    GPIO_InitStruct.Pin = GPIO_PIN_11 | GPIO_PIN_12;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF4_CAN;
+
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+}
+#endif // F0

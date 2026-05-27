@@ -1,3 +1,4 @@
+#if F0
 /* --------------------------------------------------------------------------
  * Portions Copyright © 2017 STMicroelectronics International N.V. All rights reserved.
  * Portions Copyright (c) 2013-2017 ARM Limited. All rights reserved.
@@ -1869,3 +1870,5 @@ void vApplicationGetTimerTaskMemory (StaticTask_t **ppxTimerTaskTCBBuffer, Stack
   *ppxTimerTaskStackBuffer = &Timer_Stack[0];
   *pulTimerTaskStackSize   = (uint32_t)configTIMER_TASK_STACK_DEPTH;
 }
+
+#endif // F0
