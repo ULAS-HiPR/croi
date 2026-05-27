@@ -53,7 +53,7 @@ void StateMachine::StartStateMachine() {
             //acceleration not relivant after apogee
             raw_data.core_data.imu.acceleration.y = 0.0000f;
         }
-        kalman_filter_->update(raw_data.core_data.barometer.altitude, (raw_data.core_data.imu.acceleration.y)); // y axis for test data
+        kalman_filter_->update(raw_data.core_data.barometer.altitude, raw_data.core_data.imu.acceleration.x, raw_data.core_data.imu.acceleration.y,raw_data.core_data.imu.acceleration.z);
         kalman_filter_->update_values(&raw_data.prediction);
         update_state(raw_data.core_data, raw_data.prediction);
 
