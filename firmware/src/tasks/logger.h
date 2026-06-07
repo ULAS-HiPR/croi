@@ -30,6 +30,10 @@ class Logger {
     private:
         void StartLogger();
         static void StartLoggerEntry(void *argument);
+        uint32_t endlog_time{0};
+        bool logging_stop_timer{true};
+        bool is_logger_active(State state, uint32_t time);
+       
 
         Flash* storage_;
         osMessageQueueId_t logger_queue_;

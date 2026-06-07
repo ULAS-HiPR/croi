@@ -23,7 +23,7 @@ void CAN_task::StartCAN() {
     CAN_Frame rx_frame;
 
     flight_data shared_data{};
-    canards_raw canards_data{};
+    flight_data logger_data{};
 
     for (;;) {
         if (canbus_.receive(&rx_frame)) {
@@ -118,20 +118,61 @@ void CAN_task::StartCAN() {
             osMessageQueuePut(can_queue_, &shared_data, 0, 10U);
         //}
 
-        if (osMessageQueueGet(logger_queue_,&canards_data, 0, 0U) == osOK) {
-            TX_STATUS_Payload tx{}; // temp payload struct until canards implemented
-            tx.rssi = static_cast<int8_t>(canards_data.kp);
-            tx.snr = static_cast<int8_t>(canards_data.kd);
-            tx.tx_queue = static_cast<uint8_t>(canards_data.servo_angle);
-            tx.flags = 0;
+        if (osMessageQueueGet(logger_queue_, &logger_data, 0, 0U) == osOK) {
+            CAN_Frame imu_accel_frame;
+            CAN_Frame imu_gyro_frame;
+            CAN_Frame baro_frame;
+            CAN_Frame kalman_frame;
+            CAN_Frame state_frame;
 
-            CAN_Frame tx_frame = pack_frame(CAN_ID_TX_STATUS, tx);
-            canbus_.send(&tx_frame);
+            IMU_ACCEL_Payload accel_payload{
+                static_cast<int16_t>(logger_data.core_data.imu.acceleration.x * 100.0f),
+                static_cast<int16_t>(logger_data.core_data.imu.acceleration.y * 100.0f),
+                static_cast<int16_t>(logger_data.core_data.imu.acceleration.z * 100.0f),
+                static_cast<uint16_t>(logger_data.core_data.time % 65536)
+            };
+
+            IMU_GYRO_Payload gyro_payload{
+                static_cast<int16_t>(logger_data.core_data.imu.gyro.x * 100.0f),
+                static_cast<int16_t>(logger_data.core_data.imu.gyro.y * 100.0f),
+                static_cast<int16_t>(logger_data.core_data.imu.gyro.z * 100.0f),
+                static_cast<uint16_t>(logger_data.core_data.time % 65536)
+            };
+
+            BARO_Payload baro_payload{
+                static_cast<uint32_t>(logger_data.core_data.barometer.pressure),
+                static_cast<int16_t>(logger_data.core_data.barometer.temperature * 100.0f),
+                static_cast<uint16_t>(logger_data.core_data.time % 65536)
+            };
+
+            KALMANN_Payload kalman_payload{
+                static_cast<int16_t>(logger_data.prediction.altitude),
+                static_cast<int16_t>(logger_data.prediction.velocity * 100.0f),
+                static_cast<int16_t>(logger_data.prediction.acceleration * 100.0f),
+                static_cast<uint16_t>(logger_data.core_data.time % 65536)
+            };
+
+            FLIGHT_STATE_Payload state_payload{
+                static_cast<uint8_t>(logger_data.state),
+                0,
+                static_cast<uint16_t>(logger_data.core_data.time % 65536)
+            };
+
+            imu_accel_frame = pack_frame(CAN_ID_IMU_ACCEL, accel_payload);
+            imu_gyro_frame = pack_frame(CAN_ID_IMU_GYRO, gyro_payload);
+            baro_frame = pack_frame(CAN_ID_BARO, baro_payload);
+            kalman_frame = pack_frame(CAN_ID_KALMANN, kalman_payload);
+            state_frame = pack_frame(CAN_ID_FLIGHT_STATE, state_payload);
+            canbus_.send(&imu_accel_frame);
+            canbus_.send(&imu_gyro_frame);
+            canbus_.send(&baro_frame);
+            canbus_.send(&kalman_frame);
+            canbus_.send(&state_frame);
         }
 
         // always send hearbeat
         HEARTBEAT_Payload hb{};
-        hb.node_id = NODE_LAMH;
+        hb.node_id = NODE_CROI;
         hb.state   = 1;
         hb.err     = 0;
         hb.uptime_s = 0;
