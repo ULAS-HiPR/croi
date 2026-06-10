@@ -31,21 +31,29 @@ void StateMachine::StartStateMachine() {
     printf("StateMachine started\n");
     int time = 0;
     float time_diff = 0;
-    flight_data raw_data;
-    flight_data old_data;
-    imu_data imu_data;
+    flight_data raw_data{};
+    flight_data old_data{};
+    raw_data.state = current_state; 
+    imu_data imu_data{};
 
     for (;;)
     {
         time = HAL_GetTick();
         time_diff = (time - old_data.time) / 1000.0f;
-        if (imu_->update(&imu_data)){
-            raw_data.core_data.imu.acceleration = imu_data.acceleration;
-            //printf("Got IMU\n");
-        }
-        if (baro_->update(&raw_data.core_data.barometer)){
-            //printf("Got Baro\n");
-        }
+        //if (imu_->update(&imu_data)){
+        //    raw_data.core_data.imu.acceleration = imu_data.acceleration;
+        //    //printf("Got IMU\n");
+        //}
+        //if (baro_->update(&raw_data.core_data.barometer)){
+        //    //printf("Got Baro\n");
+        //}
+
+        //fake data for testing
+        raw_data.core_data.imu.acceleration.x = 20.0f; // simulate increasing acceleration
+        raw_data.core_data.imu.acceleration.y = 0.0f;
+        raw_data.core_data.imu.acceleration.z = 0.0f;
+        raw_data.core_data.barometer.altitude = 300.0f; // simulate decreasing altitude       
+        raw_data.core_data.time = time;
 
         kalman_filter_->predict(time_diff);
         if (raw_data.state > 4)
@@ -57,15 +65,19 @@ void StateMachine::StartStateMachine() {
         kalman_filter_->update_values(&raw_data.prediction);
         update_state(raw_data.core_data, raw_data.prediction);
 
-        printf("data %d %f %f %f %d\n", time, raw_data.prediction.altitude, raw_data.prediction.velocity, raw_data.prediction.acceleration, current_state);
+        //printf("data %d %f %f %f %d\n", time, raw_data.prediction.altitude, raw_data.prediction.velocity, raw_data.prediction.acceleration, current_state);
         if (raw_data.state != current_state) {
-            printf("State changed at time %d ms: %d -> %d \n", time, raw_data.state, current_state);
+            //printf("State changed at time %d ms: %d -> %d \n", time, raw_data.state, current_state);
         }
         raw_data.state = current_state;
-        osMessageQueuePut(can_queue_, &raw_data, 0, 0);
-        osMessageQueuePut(logger_queue_, &raw_data, 0, 0);
+        flight_data snapshot_can = raw_data;
+        flight_data snapshot_logger = raw_data;
+        osMessageQueuePut(can_queue_, &snapshot_can, 0, 0);
+        osMessageQueuePut(logger_queue_, &snapshot_logger, 0, 0);
         old_data = raw_data;
-        osDelay(1000);
+        //printf("data %d %f %f %f %d\n", time, raw_data.prediction.altitude, raw_data.prediction.velocity, raw_data.prediction.acceleration, current_state);
+
+        osDelay(FSM_DELAY_MS);
     }
 }
 

@@ -115,10 +115,10 @@ void CAN_task::StartCAN() {
             shared_data.prediction.velocity = 50.0f;
             shared_data.prediction.acceleration = -9.8f;
             shared_data.state = 1;
-            osMessageQueuePut(can_queue_, &shared_data, 0, 10U);
+            osMessageQueuePut(reciver_queue_, &shared_data, 0, 10U);
         //}
 
-        if (osMessageQueueGet(logger_queue_, &logger_data, 0, 0U) == osOK) {
+        if (osMessageQueueGet(sender_queue_, &logger_data, 0, 0U) == osOK) {
             CAN_Frame imu_accel_frame;
             CAN_Frame imu_gyro_frame;
             CAN_Frame baro_frame;

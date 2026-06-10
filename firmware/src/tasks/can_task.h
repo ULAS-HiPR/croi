@@ -15,13 +15,13 @@
 #include <CAN/CAN_Handler.h>
 #include <CAN/CAN_Frames.h>
 
-#define CAN_DELAY_MS 1000
+#define CAN_DELAY_MS 100
 
 namespace task{
 class CAN_task {
     public:
-        CAN_task(CAN_Handler& canbus, osMessageQueueId_t can_queue, osMessageQueueId_t logging_queue) :
-            canbus_(canbus), can_queue_(can_queue), logger_queue_(logging_queue), taskHandle_(nullptr) {};
+        CAN_task(CAN_Handler& canbus, osMessageQueueId_t sender_queue, osMessageQueueId_t reciver_queue) :
+            canbus_(canbus), sender_queue_(sender_queue), reciver_queue_(reciver_queue), taskHandle_(nullptr) {};
         void run();
 
     private:
@@ -30,8 +30,8 @@ class CAN_task {
         char parse_message(char msg);
 
         CAN_Handler& canbus_;
-        osMessageQueueId_t can_queue_;
-        osMessageQueueId_t logger_queue_;
+        osMessageQueueId_t sender_queue_;
+        osMessageQueueId_t reciver_queue_;
 
         osThreadId_t taskHandle_;
 

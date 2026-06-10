@@ -1,5 +1,4 @@
 #include "logger.h"
-#include <cstdio>
 
 namespace task {
 
@@ -7,10 +6,18 @@ void Logger::run() {
     taskHandle_ = osThreadNew(&Logger::StartLoggerEntry,
                               this,
                               &task_attributes);
+
+    if (taskHandle_ == nullptr)
+    {
+        printf("LOGGER TASK CREATION FAILED!\n");
+    }
+    else
+    {
+        printf("Logger task created: %p\n", taskHandle_);
+    }
 }
 
 void Logger::StartLoggerEntry(void *argument) {
-    printf("Logger starting1\n");
     auto *self = static_cast<Logger*>(argument);
     if (self) {
         self->StartLogger();
@@ -24,12 +31,17 @@ void Logger::StartLogger() {
         if (osMessageQueueGet(logger_queue_,&data, 0, 0U) == osOK) {
             if (is_logger_active(static_cast<State>(data.state), data.time)) {
                 // Log the data
-                storage_->write(data.time, reinterpret_cast<uint8_t*>(&data), sizeof(flight_data));
-                 printf("Logged message: %u\n", data.time);
+                //storage_->write(data.time, reinterpret_cast<uint8_t*>(&data), sizeof(flight_data));
+                printf("Logged message: %u\n", data.time);
             }
         }   
-    }
-    osDelay(200);  
+        if (osMessageQueueGet(reciver_queue_, &data, 0, 0U) == osOK) {
+            // Process received data if needed
+            //storage_->write(data.time, reinterpret_cast<uint8_t*>(&data), sizeof(flight_data));
+            printf("Received message: %u\n", data.time);
+        }
+        osDelay(LOGGER_DELAY_MS); // Check for new messages every 100 ms
+    }  
 }
 
 

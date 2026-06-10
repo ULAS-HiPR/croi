@@ -10,12 +10,15 @@
 #include <data.h>
 #include <Flash/flash.h>
 
+#define LOGGER_DELAY_MS 100
+
 namespace task{
 class Logger {
     public:
-        Logger(Flash* storage, osMessageQueueId_t logger_queue) :
+        Logger(Flash* storage, osMessageQueueId_t logger_queue, osMessageQueueId_t reciver_queue) :
                 storage_(storage),
                 logger_queue_(logger_queue),
+                reciver_queue_(reciver_queue),
                 taskHandle_(nullptr)
         {};
 
@@ -37,6 +40,7 @@ class Logger {
 
         Flash* storage_;
         osMessageQueueId_t logger_queue_;
+        osMessageQueueId_t reciver_queue_;
         osThreadId_t taskHandle_;
 
         const osThreadAttr_t task_attributes {
@@ -45,7 +49,7 @@ class Logger {
             nullptr,
             0,
             nullptr,
-            512 * 4,        // 2 KB stack
+            512,        // 1 KB stack
             osPriorityLow,
             0,
             0

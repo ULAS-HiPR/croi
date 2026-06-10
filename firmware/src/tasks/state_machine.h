@@ -15,6 +15,8 @@
 #include "platform/stm_f0.h"
 #endif
 
+#define FSM_DELAY_MS 100
+
 namespace task{
 class StateMachine {
     public:
@@ -67,7 +69,7 @@ class StateMachine {
             nullptr,
             0,
             nullptr,
-            512 * 4,        // 2 KB stack
+            2048 ,        // 2 KB stack
             osPriorityHigh,
             0,
             0
