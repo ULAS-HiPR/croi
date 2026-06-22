@@ -8,7 +8,7 @@
 #include "stm32f0xx_hal.h"
 #include "platform/stm_f0.h"
 #endif
-#include "platform/hal_time.h"
+#include "platform/error_handler.h"
 #include "cmsis_os.h"
 #include <data.h>
 
@@ -54,7 +54,7 @@ const osMessageQueueAttr_t loggingQueue_attributes = {
 
 
 int main(void)
-{
+ {
     HAL_Init();
     SystemClock_Config();
     osKernelInitialize();
@@ -63,12 +63,12 @@ int main(void)
     osMessageQueueId_t canSenderQueueHandle = osMessageQueueNew(4, sizeof(flight_data), &canSQueue_attributes);
     osMessageQueueId_t loggingQueueHandle = osMessageQueueNew(4, sizeof(flight_data), &loggingQueue_attributes);
 
-    SPI_Handler* spi_handler_baro = new SPI_STM(&hspi1, BARO_CS_PORT, BARO_CS_PIN);
-    SPI_Handler* spi_handler_imu = new SPI_STM(&hspi1, IMU_CS_PORT, IMU_CS_PIN);
-    SPI_Handler* spi_handler_flash = new SPI_STM(&hspi1, FLASH_CS_PORT, FLASH_CS_PIN);
+    SPI_Handler* spi_handler_baro = new SPI_STM(&hspi1, BARO_CS_GPIO_Port, BARO_CS_Pin);
+    SPI_Handler* spi_handler_imu = new SPI_STM(&hspi1, IMU_CS_GPIO_Port, IMU_CS_Pin);
+    //SPI_Handler* spi_handler_flash = new SPI_STM(&hspi1, FLASH_CS_PORT, FLASH_CS_PIN);
 
     bool init_status = true;
-    Flash* flash_memory = new MX25L128(*spi_handler_flash);
+    //Flash* flash_memory = new MX25L128(*spi_handler_flash);
     //init_status &= flash_memory->init();
     
     IMU* imu = new LSM6DSO32(*spi_handler_imu);
@@ -89,27 +89,29 @@ int main(void)
     };
 
     #if F4
-    CAN_Handler* canbus = new CAN_MOCK();
+      CAN_Handler* canbus = new CAN_MOCK();
     #elif F0
-    CAN_Handler* canbus = new CAN_STM(&hcan);
+      MX_CAN_Init();
+      CAN_Handler* canbus = new CAN_STM(&hcan);
+      bool can_init_status = canbus->init();
     #endif
   
-    static task::StateMachine state_machine(imu, baro, settings, canSenderQueueHandle, loggingQueueHandle);
+    //static task::StateMachine state_machine(imu, baro, settings, canSenderQueueHandle, loggingQueueHandle);
     static task::CAN_task can_task(*canbus, canSenderQueueHandle, canReciverQueueHandle);
-    static task::Logger logger(flash_memory, loggingQueueHandle, canReciverQueueHandle);
+    //static task::Logger logger(flash_memory, loggingQueueHandle, canReciverQueueHandle);
 
     can_task.run();
-    state_machine.run();
-    logger.run();
-    size_t freeHeap = xPortGetFreeHeapSize();
-    printf("Free heap size: %u bytes\n", freeHeap);
+    //state_machine.run();
+    //logger.run();
+    //size_t freeHeap = xPortGetFreeHeapSize();
+    //printf("Free heap size: %u bytes\n", freeHeap);
 
-      osKernelStart();
-      // never get here 
-      while (1)
-      {
-        HAL_Delay(1000);
-      }
+    osKernelStart();
+    // never get here 
+    while (1)
+    {
+      HAL_Delay(1000);
+    }
     }
 
 
@@ -120,20 +122,20 @@ int main(void)
   */
 void SystemClock_Config(void)
 {
-  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+    RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+    RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-  {
-    Error_Handler();
-  }
+    RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+    RCC_OscInitStruct.PLL.PLLState        = RCC_PLL_NONE;
+
+    if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
+        Error_Handler();
+    }
 
   /** Initializes the CPU, AHB and APB buses clocks
   */
@@ -141,12 +143,12 @@ void SystemClock_Config(void)
                               |RCC_CLOCKTYPE_PCLK1;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+    RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
   {
-    Error_Handler();
-  }
+        Error_Handler();
+    }
 }
 
 #ifdef F0
@@ -173,20 +175,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 }
 #endif // F0
 
-/**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
-void Error_Handler(void)
-{
-  /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
-  while (1)
-  {
-  }
-  /* USER CODE END Error_Handler_Debug */
-}
 #ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
