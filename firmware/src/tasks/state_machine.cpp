@@ -40,19 +40,14 @@ void StateMachine::StartStateMachine() {
     {
         time = HAL_GetTick();
         time_diff = (time - old_data.time) / 1000.0f;
-        //if (imu_->update(&imu_data)){
-        //    raw_data.core_data.imu.acceleration = imu_data.acceleration;
-        //    //printf("Got IMU\n");
-        //}
-        //if (baro_->update(&raw_data.core_data.barometer)){
-        //    //printf("Got Baro\n");
-        //}
+        if (imu_->update(&imu_data)){
+           raw_data.core_data.imu.acceleration = imu_data.acceleration;
+            printf("Got IMU\n");
+        }
+        if (baro_->update(&raw_data.core_data.barometer)){
+            printf("Got Baro\n");
+        }
 
-        //fake data for testing
-        raw_data.core_data.imu.acceleration.x = 20.0f; // simulate increasing acceleration
-        raw_data.core_data.imu.acceleration.y = 0.0f;
-        raw_data.core_data.imu.acceleration.z = 0.0f;
-        raw_data.core_data.barometer.altitude = 300.0f; // simulate decreasing altitude       
         raw_data.core_data.time = time;
 
         kalman_filter_->predict(time_diff);

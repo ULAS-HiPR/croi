@@ -6,9 +6,10 @@
 #include "stm32f0xx_hal_spi.h"
 #include "stm32f0xx_hal_gpio.h"
 #include "error_handler.h"
-#define LED_PIN GPIO_PIN_5 
-#define LED_GPIO_PORT GPIOA 
-#define LED_GPIO_CLK_ENABLE() __HAL_RCC_GPIOA_CLK_ENABLE() 
+
+#define BUZZER_GPIO_PORT GPIOB
+#define BUZZER_GPIO_PIN GPIO_PIN_0
+#define BUZZER_TIMER_TICK_HZ 1000000U
 
 #define SPI_SCK_PIN GPIO_PIN_5 
 #define SPI_MISO_PIN GPIO_PIN_6 
@@ -16,28 +17,31 @@
 #define SPI_GPIO_PORT GPIOA 
 #define SPI_GPIO_CLK_ENABLE() __HAL_RCC_GPIOA_CLK_ENABLE() 
 
-#define IMU_CS_Pin GPIO_PIN_11
-#define IMU_CS_GPIO_Port GPIOB
+#define IMU_CS_PIN GPIO_PIN_11
+#define IMU_CS_PORT GPIOB
 
-#define FLASH_CS_Pin GPIO_PIN_12
-#define FLASH_CS_GPIO_Port GPIOB
+#define FLASH_CS_PIN GPIO_PIN_12
+#define FLASH_CS_PORT GPIOB
+#define FLASH_CS_GPIO_CLK_ENABLE() __HAL_RCC_GPIOB_CLK_ENABLE()
 
-#define BME_CS_Pin GPIO_PIN_14
-#define BME_CS_GPIO_Port GPIOB
+#define BME680_CS_PIN GPIO_PIN_14
+#define BME680_CS_PORT GPIOB
 
-#define ADXL_CS_Pin GPIO_PIN_15
-#define ADXL_CS_GPIO_Port GPIOB
+#define ADXL375_CS_PIN GPIO_PIN_15
+#define ADXL375_CS_PORT GPIOB
 
-#define BARO_CS_Pin GPIO_PIN_4
-#define BARO_CS_GPIO_Port GPIOB
+#define BARO_CS_PIN GPIO_PIN_4
+#define BARO_CS_PORT GPIOB
 
 extern SPI_HandleTypeDef hspi1;
 extern CAN_HandleTypeDef hcan;
+extern TIM_HandleTypeDef htim3;
 
 // Initialization functions
 void MX_SPI1_Init();
 void MX_CAN_Init();
 void MX_GPIO_Init();
+void MX_TIM3_Init(void);
 
 #endif // STM_F4_H
 #endif // F4
