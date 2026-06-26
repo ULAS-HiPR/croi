@@ -1,3 +1,4 @@
+#if F0
 /*---------------------------------------------------------------------------
  * Portions Copyright (c) 2013-2017 ARM Limited. All rights reserved.
  * Portions Copyright © 2017 STMicroelectronics International N.V. All rights reserved.
@@ -366,3 +367,5 @@ osStatus osMailFree (osMailQId queue_id, void *mail) {
 
 
 #endif  // osCMSIS
+
+#endif // F0

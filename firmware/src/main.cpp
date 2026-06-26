@@ -1,4 +1,5 @@
 #include "data.h"
+#include <cstdint>
 #if F4
 #include "stm32f4xx_hal.h"
 #include "platform/stm_f4.h"
@@ -7,127 +8,121 @@
 #include "stm32f0xx_hal.h"
 #include "platform/stm_f0.h"
 #endif
+#include "platform/error_handler.h"
 #include "cmsis_os.h"
 #include <data.h>
-#include "tools/state_machine.h"
-#include "tools/kalman_filter.h"
 
-#include <IMU/IMU.h>
-#include <IMU/MPU6050.h>
+#include "tasks/state_machine.h"
+#include "tasks/CAN_task.h"
+#include "tasks/logger.h"
+
+//Generic henders
 #include <sensor.h>
+#include <IMU/IMU.h>
 #include <Baro/baro.h>
-#include <Baro/BMP390.h>
-
-#include <I2C/I2C_STM.h>
+#include <Flash/flash.h>
+#include <Buzzer/buzzer.h>
 #include <SPI/SPI_STM.h>
+#include <CAN/CAN_Handler.h>
+#if F4
+#include <CAN/CAN_Mock.h>
+#elif F0
+#include <CAN/CAN_STM.h>
+#endif
+
+//Specific sensors
+#include <IMU/LSM6DSO32.h>
+#include <Baro/MS5607.h>
+#include <Flash/MX25L128.h>
+#include <Buzzer/buzzer_stm.h>
+//#inlcude <IMU/ADXL347.h>
+//#include <Env/BME280.h>
 
 
 void SystemClock_Config(void);
 void Error_Handler(void);
 
-struct FSM_TaskArgs {
-    IMU* imu;
-    Baro* baro;
-    KalmanFilter* kalman;
-    flash_internal_data settings;
+const osMessageQueueAttr_t canRQueue_attributes = {
+  .name = "canReciverQueue"
 };
 
-void StartFSM(void *argument)
-{
-    auto* args = static_cast<FSM_TaskArgs*>(argument);
+const osMessageQueueAttr_t canSQueue_attributes = {
+  .name = "canSenderQueue"
+};
 
-    IMU* imu = args->imu;
-    Baro* baro = args->baro;
-    KalmanFilter* kalman_filter = args->kalman;
-    StateMachine* state_machine = new StateMachine(args->settings);
-
-    flight_data raw_data;
-    flight_data old_data;
-    flight_data processed_data;
-    imu_data imu_data;
-
-    uint32_t time = HAL_GetTick();
-    float time_diff = 0;
-    for (;;)
-    {
-        time = HAL_GetTick();
-        time_diff = (time - old_data.time) / 1000.0f;
-        if (imu->update(&imu_data)){
-            raw_data.core_data.acceleration = imu_data.acceleration;
-            //printf("Got IMU\n");
-        }
-        if (baro->update(&raw_data.core_data.barometer)){
-            //printf("Got Baro\n");
-        }
-
-        kalman_filter->predict(time_diff);
-        if (raw_data.state > 4)
-        {
-            //acceleration not relivant after apogee
-            raw_data.core_data.acceleration.y = 0.0000f;
-        }
-        kalman_filter->update(raw_data.core_data.barometer.altitude, (raw_data.core_data.acceleration.y)); // y axis for test data
-        kalman_filter->update_values(&raw_data.prediction);
-        state_machine->update_state(raw_data.core_data, raw_data.prediction);
-
-        printf("data %lu %f %f %f %d\n", time, raw_data.prediction.altitude, raw_data.prediction.velocity, raw_data.prediction.acceleration, state_machine->current_state);
-        raw_data.state = state_machine->current_state;
-        old_data = raw_data;
-
-      osDelay(1000);
-    }
-}
-
-osThreadId_t blinkTaskHandle;
-
-const osThreadAttr_t blinkTask_attributes = {
-    "FSMTask",          // name
-    0,                    // attr_bits
-    nullptr,              // cb_mem
-    0,                    // cb_size
-    nullptr,              // stack_mem
-    256 * 4,              // stack_size
-    osPriorityNormal,     // priority
-    0,                    // tz_module
-    0                     // reserved
+const osMessageQueueAttr_t loggingQueue_attributes = {
+  .name = "loggingQueue"
 };
 
 
 int main(void)
-{
-    int* leaked_int = new int(42);
+  {
     HAL_Init();
     SystemClock_Config();
+    
+    MX_GPIO_Init();
+    MX_SPI1_Init();
+    MX_TIM3_Init();
     osKernelInitialize();
 
-    I2C_Handler* i2c_handler = new I2C_STM(&hi2c1, 0x68 << 1);
-    SPI_Handler* spi_handler = new SPI_STM(&hspi1, BARO_CS_PORT, BARO_CS_PIN);
-    IMU* imu = new MPU6050(*i2c_handler);
-    Baro* baro = new BMP390(*spi_handler);
-    KalmanFilter* kalman = new KalmanFilter();
-    static flash_internal_data settings {
+    SPI_Handler* spi_handler_baro = new SPI_STM(&hspi1, BARO_CS_PORT, BARO_CS_PIN);
+    SPI_Handler* spi_handler_imu = new SPI_STM(&hspi1, IMU_CS_PORT, IMU_CS_PIN);
+    //SPI_Handler* spi_handler_flash = new SPI_STM(&hspi1, FLASH_CS_PORT, FLASH_CS_PIN);
+
+    bool init_status = true;
+    //Flash* flash_memory = new MX25L128(*spi_handler_flash);
+    //init_status &= flash_memory->init();
+    
+    IMU* imu = new LSM6DSO32(*spi_handler_imu);
+    Baro* baro = new MS5607(*spi_handler_baro);
+    Buzzer* buzzer = new Buzzer_STM(&htim3, TIM_CHANNEL_3);
+
+    buzzer->init();
+    buzzer->play_startup();
+
+
+    init_status &= imu->init();
+    init_status &= baro->init();
+
+    //fake memory location
+    uint8_t buffer[sizeof(flash_internal_data)];
+    //bool read_correctly = flash_memory->read(0x00, &buffer[0], sizeof(flash_internal_data));
+    //flash_internal_data* settings = reinterpret_cast<flash_internal_data*>(buffer);
+    // test settings
+    flash_internal_data* settings = new flash_internal_data{
         .main_height = 200,
         .drouge_delay = 0,
         .liftoff_thresh = 20
     };
 
-    //StateMachine* state_machine = new StateMachine(settings);
+    #if F4
+      CAN_Handler* canbus = new CAN_MOCK();
+    #elif F0
+      MX_CAN_Init();
+      CAN_Handler* canbus = new CAN_STM(&hcan);
+      bool can_init_status = canbus->init();
+    #endif
+  
+    osMessageQueueId_t canReciverQueueHandle = osMessageQueueNew(4, sizeof(flight_data), &canRQueue_attributes);
+    osMessageQueueId_t canSenderQueueHandle = osMessageQueueNew(4, sizeof(flight_data), &canSQueue_attributes);
+    osMessageQueueId_t loggingQueueHandle = osMessageQueueNew(4, sizeof(flight_data), &loggingQueue_attributes);
 
-    static FSM_TaskArgs fsm_args;
+    static task::StateMachine state_machine(imu, baro, settings, canSenderQueueHandle, loggingQueueHandle);
+    static task::CAN_task can_task(*canbus, canSenderQueueHandle, canReciverQueueHandle);
+    //static task::Logger logger(flash_memory, loggingQueueHandle, canReciverQueueHandle);
 
-    fsm_args.imu = imu;
-    fsm_args.baro = baro;
-    fsm_args.kalman = kalman;
-    fsm_args.settings = settings;
+    //can_task.run();
+    state_machine.run();
+    //logger.run();
+    //size_t freeHeap = xPortGetFreeHeapSize();
+    //printf("Free heap size: %u bytes\n", freeHeap);
 
-    osThreadNew(StartFSM, &fsm_args, &blinkTask_attributes);
-
-      osKernelStart();
-      // never get here 
-      while (1)
-      {
-        HAL_Delay(1000);
-      }
+    osKernelStart();
+    // never get here 
+    while (1)
+    {
+      HAL_Delay(1000);
+    }
     }
 
 
@@ -144,29 +139,31 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
-  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-  {
-    Error_Handler();
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+  RCC_OscInitStruct.PLL.PREDIV = RCC_PREDIV_DIV1;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL6;
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
+      Error_Handler();
   }
 
   /** Initializes the CPU, AHB and APB buses clocks
   */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_PCLK1;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
+
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
   {
-    Error_Handler();
+      Error_Handler();
   }
 }
 
+#ifdef F0
 /**
   * @brief  Period elapsed callback in non blocking mode
   * @note   This function is called  when TIM6 interrupt took place, inside
@@ -182,27 +179,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   /* USER CODE END Callback 0 */
   if (htim->Instance == TIM6)
   {
-    HAL_IncTick();
-  }
+        HAL_IncTick();
+    }
   /* USER CODE BEGIN Callback 1 */
 
   /* USER CODE END Callback 1 */
 }
+#endif // F0
 
-/**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
-void Error_Handler(void)
-{
-  /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
-  while (1)
-  {
-  }
-  /* USER CODE END Error_Handler_Debug */
-}
 #ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number

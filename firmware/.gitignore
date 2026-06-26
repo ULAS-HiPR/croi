@@ -6,3 +6,6 @@
 
 *.DS_Store
 *.log
+*.ctu-info
+*.dump
+extra/
