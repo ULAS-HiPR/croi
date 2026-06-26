@@ -10,31 +10,14 @@
 #endif
 #include "platform/error_handler.h"
 #include "cmsis_os.h"
-#include <data.h>
 
-#include "tasks/state_machine.h"
 #include "tasks/CAN_task.h"
-#include "tasks/logger.h"
 
-//Generic henders
-#include <sensor.h>
-#include <IMU/IMU.h>
-#include <Baro/baro.h>
-#include <Flash/flash.h>
-#include <SPI/SPI_STM.h>
-#include <CAN/CAN_Handler.h>
 #if F4
 #include <CAN/CAN_Mock.h>
 #elif F0
 #include <CAN/CAN_STM.h>
 #endif
-
-//Specific sensors
-#include <IMU/LSM6DSO32.h>
-#include <Baro/MS5607.h>
-#include <Flash/MX25L128.h>
-//#inlcude <IMU/ADXL347.h>
-//#include <Env/BME280.h>
 
 
 void SystemClock_Config(void);
@@ -48,11 +31,6 @@ const osMessageQueueAttr_t canSQueue_attributes = {
   .name = "canSenderQueue"
 };
 
-const osMessageQueueAttr_t loggingQueue_attributes = {
-  .name = "loggingQueue"
-};
-
-
 int main(void)
  {
     HAL_Init();
@@ -61,50 +39,26 @@ int main(void)
 
     osMessageQueueId_t canReciverQueueHandle = osMessageQueueNew(4, sizeof(flight_data), &canRQueue_attributes);
     osMessageQueueId_t canSenderQueueHandle = osMessageQueueNew(4, sizeof(flight_data), &canSQueue_attributes);
-    osMessageQueueId_t loggingQueueHandle = osMessageQueueNew(4, sizeof(flight_data), &loggingQueue_attributes);
-
-    SPI_Handler* spi_handler_baro = new SPI_STM(&hspi1, BARO_CS_GPIO_Port, BARO_CS_Pin);
-    SPI_Handler* spi_handler_imu = new SPI_STM(&hspi1, IMU_CS_GPIO_Port, IMU_CS_Pin);
-    //SPI_Handler* spi_handler_flash = new SPI_STM(&hspi1, FLASH_CS_PORT, FLASH_CS_PIN);
-
-    bool init_status = true;
-    //Flash* flash_memory = new MX25L128(*spi_handler_flash);
-    //init_status &= flash_memory->init();
-    
-    IMU* imu = new LSM6DSO32(*spi_handler_imu);
-    Baro* baro = new MS5607(*spi_handler_baro);
-
-    //init_status &= imu->init();
-    //init_status &= baro->init();
-
-    //fake memory location
-    uint8_t buffer[sizeof(flash_internal_data)];
-    //bool read_correctly = flash_memory->read(0x00, &buffer[0], sizeof(flash_internal_data));
-    //flash_internal_data* settings = reinterpret_cast<flash_internal_data*>(buffer);
-    // test settings
-    flash_internal_data* settings = new flash_internal_data{
-        .main_height = 200,
-        .drouge_delay = 0,
-        .liftoff_thresh = 20
-    };
+    if (canReciverQueueHandle == nullptr || canSenderQueueHandle == nullptr) {
+      Error_Handler();
+    }
 
     #if F4
-      CAN_Handler* canbus = new CAN_MOCK();
+      static CAN_MOCK canbus;
+      if (!canbus.init()) {
+        Error_Handler();
+      }
+      static task::CAN_task can_task(canbus, canSenderQueueHandle, canReciverQueueHandle, NODE_CROI);
+      can_task.run();
     #elif F0
       MX_CAN_Init();
-      CAN_Handler* canbus = new CAN_STM(&hcan);
-      bool can_init_status = canbus->init();
+      static CAN_STM canbus(&hcan);
+      if (!canbus.init()) {
+        Error_Handler();
+      }
+      static task::CAN_task can_task(canbus, canSenderQueueHandle, canReciverQueueHandle, NODE_CROI);
+      can_task.run();
     #endif
-  
-    //static task::StateMachine state_machine(imu, baro, settings, canSenderQueueHandle, loggingQueueHandle);
-    static task::CAN_task can_task(*canbus, canSenderQueueHandle, canReciverQueueHandle);
-    //static task::Logger logger(flash_memory, loggingQueueHandle, canReciverQueueHandle);
-
-    can_task.run();
-    //state_machine.run();
-    //logger.run();
-    //size_t freeHeap = xPortGetFreeHeapSize();
-    //printf("Free heap size: %u bytes\n", freeHeap);
 
     osKernelStart();
     // never get here 
@@ -125,9 +79,29 @@ void SystemClock_Config(void)
     RCC_OscInitTypeDef RCC_OscInitStruct = {0};
     RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
-  /** Initializes the RCC Oscillators according to the specified parameters
-  * in the RCC_OscInitTypeDef structure.
-  */
+#ifdef F0
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+  RCC_OscInitStruct.PLL.PREDIV = RCC_PREDIV_DIV1;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL6;
+
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
+      Error_Handler();
+  }
+
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK
+                              | RCC_CLOCKTYPE_PCLK1;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK) {
+      Error_Handler();
+  }
+  SystemCoreClockUpdate();
+#else
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
     RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
@@ -149,6 +123,7 @@ void SystemClock_Config(void)
   {
         Error_Handler();
     }
+#endif
 }
 
 #ifdef F0
