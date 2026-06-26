@@ -92,7 +92,7 @@ int main(void)
     flash_internal_data* settings = new flash_internal_data{
         .main_height = 200,
         .drouge_delay = 0,
-        .liftoff_thresh = 20
+        .liftoff_thresh = 20,
     };
 
     #if F4
@@ -105,7 +105,7 @@ int main(void)
       }
     #endif
 
-    osMessageQueueId_t canReciverQueueHandle = osMessageQueueNew(4, sizeof(flight_data), &canRQueue_attributes);
+    osMessageQueueId_t canReciverQueueHandle = osMessageQueueNew(4, sizeof(secondary_flight_data), &canRQueue_attributes);
     osMessageQueueId_t canSenderQueueHandle = osMessageQueueNew(4, sizeof(flight_data), &canSQueue_attributes);
     osMessageQueueId_t loggingQueueHandle = osMessageQueueNew(4, sizeof(flight_data), &loggingQueue_attributes);
 

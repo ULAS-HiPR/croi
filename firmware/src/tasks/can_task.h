@@ -15,7 +15,7 @@
 #include <CAN/CAN_Handler.h>
 #include <CAN/CAN_Frames.h>
 
-#define CAN_DELAY_MS 10
+#define CAN_DELAY_MS 200
 #define CAN_HEARTBEAT_PERIOD_MS 1000U
 #define CAN_FLIGHT_TX_MIN_PERIOD_MS 20U
 #define CAN_BUS_RECOVERY_PERIOD_MS 250U
@@ -40,7 +40,7 @@ class CAN_task {
     private:
         void StartCAN();
         static void StartCANEntry(void *argument);
-        bool process_rx_frame(const CAN_Frame& frame, flight_data& shared_data);
+        bool process_rx_frame(const CAN_Frame& frame, secondary_flight_data& shared_data);
         void send_flight_data(const flight_data& data);
         void send_heartbeat(uint32_t now_ms);
         void service_bus_health(uint32_t now_ms);

@@ -4,12 +4,12 @@ namespace task {
 
 namespace {
 
-void put_drop_oldest(osMessageQueueId_t queue, const flight_data& data) {
+void put_drop_oldest(osMessageQueueId_t queue, const secondary_flight_data& data) {
     if (osMessageQueuePut(queue, &data, 0U, 0U) == osOK) {
         return;
     }
 
-    flight_data discarded{};
+    secondary_flight_data discarded{};
     (void)osMessageQueueGet(queue, &discarded, nullptr, 0U);
     (void)osMessageQueuePut(queue, &data, 0U, 0U);
 }
@@ -31,7 +31,7 @@ void CAN_task::StartCANEntry(void *argument) {
 }
 
 void CAN_task::StartCAN() {
-    flight_data shared_data{};
+    secondary_flight_data shared_data{};
     flight_data outbound_data{};
     last_heartbeat_ms_ = HAL_GetTick();
     last_flight_tx_ms_ = last_heartbeat_ms_;
@@ -52,6 +52,7 @@ void CAN_task::StartCAN() {
         if (received_update) {
             put_drop_oldest(reciver_queue_, shared_data);
         }
+
 
         while (osMessageQueueGet(sender_queue_, &outbound_data, nullptr, 0U) == osOK) {
             pending_outbound_data_ = outbound_data;
@@ -75,7 +76,7 @@ void CAN_task::StartCAN() {
     }
 }
 
-bool CAN_task::process_rx_frame(const CAN_Frame& frame, flight_data& shared_data) {
+bool CAN_task::process_rx_frame(const CAN_Frame& frame, secondary_flight_data& shared_data) {
     if (CAN_ID_IS_HEARTBEAT(frame.id)) {
         HEARTBEAT_Payload payload{};
         if (!try_unpack_frame(frame, payload)) {
@@ -86,63 +87,30 @@ bool CAN_task::process_rx_frame(const CAN_Frame& frame, flight_data& shared_data
     }
 
     switch (frame.id) {
-        case CAN_ID_IMU_ACCEL: {
-            IMU_ACCEL_Payload payload{};
-            if (!try_unpack_frame(frame, payload)) {
-                return false;
-            }
-            shared_data.core_data.imu.acceleration.x = payload.ax / 100.0f;
-            shared_data.core_data.imu.acceleration.y = payload.ay / 100.0f;
-            shared_data.core_data.imu.acceleration.z = payload.az / 100.0f;
-            shared_data.core_data.time = payload.timestamp_ms;
-            return true;
-        }
+        case CAN_ID_GPS: {
+                GPS_Payload payload{};
+                if (!unpack_gps(frame, payload)) {
+                        return false;
+                }
 
-        case CAN_ID_IMU_GYRO: {
-            IMU_GYRO_Payload payload{};
-            if (!try_unpack_frame(frame, payload)) {
-                return false;
-            }
-            shared_data.core_data.imu.gyro.x = payload.gx;
-            shared_data.core_data.imu.gyro.y = payload.gy;
-            shared_data.core_data.imu.gyro.z = payload.gz;
-            shared_data.core_data.time = payload.timestamp_ms;
-            return true;
-        }
+                shared_data.gps.latitude  = gps_decode(payload.latitude);
+                shared_data.gps.longitude = gps_decode(payload.longitude);
+                shared_data.gps.satellites = payload.satellites;
 
-        case CAN_ID_BARO: {
-            BARO_Payload payload{};
-            if (!try_unpack_frame(frame, payload)) {
-                return false;
-            }
-            shared_data.core_data.barometer.pressure =
-                static_cast<int32_t>(payload.pressure);
-            shared_data.core_data.barometer.temperature = payload.temp / 100.0f;
-            shared_data.core_data.time = payload.timestamp_ms;
-            return true;
+                return true;
         }
+        case CAN_ID_CANARDS:{
+                CanardsPayload payload{};
+                if (!try_unpack_frame(frame, payload)) {
+                        return false;
+                }
 
-        case CAN_ID_KALMANN: {
-            KALMANN_Payload payload{};
-            if (!try_unpack_frame(frame, payload)) {
-                return false;
-            }
-            shared_data.prediction.acceleration = payload.accleration / 100.0f;
-            shared_data.prediction.altitude = payload.altitude_m;
-            shared_data.prediction.velocity = payload.vspeed_cms / 100.0f;
-            shared_data.core_data.time = payload.timestamp_ms;
-            return true;
-        }
+                shared_data.canards.kp = static_cast<float>(payload.kp) / 1000.0f;
+                shared_data.canards.kd = static_cast<float>(payload.kd) / 1000.0f;
+                shared_data.canards.servo_angle = static_cast<float>(payload.servo_angle) / 100.0f;
+                shared_data.canards.active = (payload.active != 0);
 
-        case CAN_ID_FLIGHT_STATE: {
-            FLIGHT_STATE_Payload payload{};
-            if (!try_unpack_frame(frame, payload)) {
-                return false;
-            }
-            shared_data.state = payload.state;
-            shared_data.time = payload.timestamp_ms;
-            flight_state_ = payload.state;
-            return true;
+                return true;
         }
 
         default:
