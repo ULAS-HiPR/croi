@@ -96,13 +96,15 @@ int main(void)
     };
 
     #if F4
-      CAN_Handler* canbus = new CAN_MOCK();
+      static CAN_MOCK canbus;
     #elif F0
       MX_CAN_Init();
-      CAN_Handler* canbus = new CAN_STM(&hcan);
-      bool can_init_status = canbus->init();
+      static CAN_STM canbus(&hcan);
+      if (!canbus.init()) {
+         Error_Handler();
+      }
     #endif
-  
+
     osMessageQueueId_t canReciverQueueHandle = osMessageQueueNew(4, sizeof(flight_data), &canRQueue_attributes);
     osMessageQueueId_t canSenderQueueHandle = osMessageQueueNew(4, sizeof(flight_data), &canSQueue_attributes);
     osMessageQueueId_t loggingQueueHandle = osMessageQueueNew(4, sizeof(flight_data), &loggingQueue_attributes);
