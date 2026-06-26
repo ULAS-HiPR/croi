@@ -108,10 +108,11 @@ int main(void)
     osMessageQueueId_t loggingQueueHandle = osMessageQueueNew(4, sizeof(flight_data), &loggingQueue_attributes);
 
     static task::StateMachine state_machine(imu, baro, settings, canSenderQueueHandle, loggingQueueHandle);
-    static task::CAN_task can_task(*canbus, canSenderQueueHandle, canReciverQueueHandle);
+    static task::CAN_task can_task(canbus, canSenderQueueHandle, canReciverQueueHandle, NODE_CROI);
+      
     //static task::Logger logger(flash_memory, loggingQueueHandle, canReciverQueueHandle);
 
-    //can_task.run();
+    can_task.run();
     state_machine.run();
     //logger.run();
     //size_t freeHeap = xPortGetFreeHeapSize();

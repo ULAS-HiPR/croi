@@ -2,6 +2,20 @@
 
 namespace task {
 
+namespace {
+
+void put_drop_oldest(osMessageQueueId_t queue, const flight_data& data) {
+    if (osMessageQueuePut(queue, &data, 0U, 0U) == osOK) {
+        return;
+    }
+
+    flight_data discarded{};
+    (void)osMessageQueueGet(queue, &discarded, nullptr, 0U);
+    (void)osMessageQueuePut(queue, &data, 0U, 0U);
+}
+
+}
+
 void CAN_task::run() {
     taskHandle_ = osThreadNew(&CAN_task::StartCANEntry,
                               this,
@@ -17,191 +31,306 @@ void CAN_task::StartCANEntry(void *argument) {
 }
 
 void CAN_task::StartCAN() {
-
-    printf("CAN task started\n");
-
-    CAN_Frame rx_frame;
-
     flight_data shared_data{};
-    flight_data logger_data{};
+    flight_data outbound_data{};
+    last_heartbeat_ms_ = HAL_GetTick();
+    last_flight_tx_ms_ = last_heartbeat_ms_;
+    last_bus_recovery_ms_ = last_heartbeat_ms_;
 
     for (;;) {
-        if (canbus_.receive(&rx_frame)) {
-            switch (rx_frame.id) {
-                case CAN_ID_IMU_ACCEL: {
+        const uint32_t now_ms = HAL_GetTick();
+        service_bus_health(now_ms);
+        expire_node_status(now_ms);
+        flush_tx_queue();
 
-                    if (rx_frame.dlc != sizeof(IMU_ACCEL_Payload)) {
-                        break;
-                    }
-
-                    IMU_ACCEL_Payload accel{};
-                    unpack_frame(rx_frame, accel);
-
-                    shared_data.core_data.imu.acceleration.x = accel.ax / 100.0f;
-                    shared_data.core_data.imu.acceleration.y = accel.ay / 100.0f;
-                    shared_data.core_data.imu.acceleration.z = accel.az / 100.0f;
-
-                    break;
-                }
-
-                case CAN_ID_IMU_GYRO: {
-
-                    if (rx_frame.dlc != sizeof(IMU_GYRO_Payload)) {
-                        break;
-                    }
-
-                    IMU_GYRO_Payload gyro{};
-                    unpack_frame(rx_frame, gyro);
-
-                    shared_data.core_data.imu.gyro.x = gyro.gx / 100.0f;
-                    shared_data.core_data.imu.gyro.y = gyro.gy / 100.0f;
-                    shared_data.core_data.imu.gyro.z = gyro.gz / 100.0f;
-
-                    break;
-                }
-
-                case CAN_ID_BARO: {
-
-                    if (rx_frame.dlc != sizeof(BARO_Payload)) {
-                        break;
-                    }
-
-                    BARO_Payload baro{};
-                    unpack_frame(rx_frame, baro);
-
-                    shared_data.core_data.barometer.pressure = static_cast<float>(baro.pressure);
-                    shared_data.core_data.barometer.temperature =  baro.temp / 100.0f;
-
-                    break;
-                }
-                case CAN_ID_KALMANN: {
-                    if (rx_frame.dlc != sizeof(KALMANN_Payload)) {
-                        break;
-                    }
-
-                    KALMANN_Payload kalman{};
-                    unpack_frame(rx_frame, kalman);
-
-                    shared_data.prediction.altitude =  kalman.altitude_m;
-                    shared_data.prediction.velocity = kalman.vspeed_cms / 100.0f;
-                    shared_data.prediction.acceleration = kalman.accleration / 100.0f;
-
-                    break;
-                }
-                case CAN_ID_FLIGHT_STATE: {
-                    if (rx_frame.dlc != sizeof(FLIGHT_STATE_Payload)) {
-                        break;
-                    }
-
-                    FLIGHT_STATE_Payload state{};
-                    unpack_frame(rx_frame, state);
-
-                    shared_data.state = state.state;
-
-                    break;
-                }
-
-                default:
-                    break;
-            }
-        }
-        // --- IGNORE THIS TEST CODE ---/
-            shared_data.core_data.imu.gyro.x = 100.0f; 
-            shared_data.core_data.imu.gyro.y = 0.0f;
-            shared_data.core_data.imu.gyro.z = 0.0f;
-            shared_data.core_data.barometer.pressure = 101325.0f;
-            shared_data.core_data.barometer.temperature = 20.0f;
-            shared_data.prediction.altitude = 100.0f;
-            shared_data.prediction.velocity = 50.0f;
-            shared_data.prediction.acceleration = -9.8f;
-            shared_data.state = 1;
-            osMessageQueuePut(reciver_queue_, &shared_data, 0, 10U);
-        //}
-
-        if (osMessageQueueGet(sender_queue_, &logger_data, 0, 0U) == osOK) {
-            CAN_Frame imu_accel_frame;
-            CAN_Frame imu_gyro_frame;
-            CAN_Frame baro_frame;
-            CAN_Frame kalman_frame;
-            CAN_Frame state_frame;
-
-            IMU_ACCEL_Payload accel_payload{
-                static_cast<int16_t>(logger_data.core_data.imu.acceleration.x * 100.0f),
-                static_cast<int16_t>(logger_data.core_data.imu.acceleration.y * 100.0f),
-                static_cast<int16_t>(logger_data.core_data.imu.acceleration.z * 100.0f),
-                static_cast<uint16_t>(logger_data.core_data.time % 65536)
-            };
-
-            IMU_GYRO_Payload gyro_payload{
-                static_cast<int16_t>(logger_data.core_data.imu.gyro.x * 100.0f),
-                static_cast<int16_t>(logger_data.core_data.imu.gyro.y * 100.0f),
-                static_cast<int16_t>(logger_data.core_data.imu.gyro.z * 100.0f),
-                static_cast<uint16_t>(logger_data.core_data.time % 65536)
-            };
-
-            BARO_Payload baro_payload{
-                static_cast<uint32_t>(logger_data.core_data.barometer.pressure),
-                static_cast<int16_t>(logger_data.core_data.barometer.temperature * 100.0f),
-                static_cast<uint16_t>(logger_data.core_data.time % 65536)
-            };
-
-            KALMANN_Payload kalman_payload{
-                static_cast<int16_t>(logger_data.prediction.altitude),
-                static_cast<int16_t>(logger_data.prediction.velocity * 100.0f),
-                static_cast<int16_t>(logger_data.prediction.acceleration * 100.0f),
-                static_cast<uint16_t>(logger_data.core_data.time % 65536)
-            };
-
-            FLIGHT_STATE_Payload state_payload{
-                static_cast<uint8_t>(logger_data.state),
-                0,
-                static_cast<uint16_t>(logger_data.core_data.time % 65536)
-            };
-
-            imu_accel_frame = pack_frame(CAN_ID_IMU_ACCEL, accel_payload);
-            imu_gyro_frame = pack_frame(CAN_ID_IMU_GYRO, gyro_payload);
-            baro_frame = pack_frame(CAN_ID_BARO, baro_payload);
-            kalman_frame = pack_frame(CAN_ID_KALMANN, kalman_payload);
-            state_frame = pack_frame(CAN_ID_FLIGHT_STATE, state_payload);
-            canbus_.send(&imu_accel_frame);
-            canbus_.send(&imu_gyro_frame);
-            canbus_.send(&baro_frame);
-            canbus_.send(&kalman_frame);
-            canbus_.send(&state_frame);
+        bool received_update = false;
+        CAN_Frame rx_frame{};
+        while (canbus_.receive(&rx_frame)) {
+            received_update |= process_rx_frame(rx_frame, shared_data);
         }
 
-        //// always send hearbeat
-        //HEARTBEAT_Payload hb{};
-        //hb.node_id = NODE_CROI;
-        //hb.state   = 1;
-        //hb.err     = 0;
-        //hb.uptime_s = 0;
-        //CAN_Frame hb_frame =
-        //pack_frame(CAN_ID_HEARTBEAT, hb);
-        //canbus_.send(&hb_frame);
+        if (received_update) {
+            put_drop_oldest(reciver_queue_, shared_data);
+        }
 
-        CAN_Frame dbg;
-        dbg.id  = 0x123;
-        dbg.dlc = 8;
+        while (osMessageQueueGet(sender_queue_, &outbound_data, nullptr, 0U) == osOK) {
+            pending_outbound_data_ = outbound_data;
+            flight_state_ = static_cast<uint8_t>(outbound_data.state);
+            has_pending_outbound_data_ = true;
+        }
 
-        dbg.data[0] = 0xDE;
-        dbg.data[1] = 0xAD;
-        dbg.data[2] = 0xBE;
-        dbg.data[3] = 0xEF;
-        dbg.data[4] = 0x01;
-        dbg.data[5] = 0x02;
-        dbg.data[6] = 0x03;
-        dbg.data[7] = 0x04;
-        canbus_.send(&dbg);
+        if (has_pending_outbound_data_ &&
+            (now_ms - last_flight_tx_ms_) >= CAN_FLIGHT_TX_MIN_PERIOD_MS) {
+            send_flight_data(pending_outbound_data_);
+            has_pending_outbound_data_ = false;
+            last_flight_tx_ms_ = now_ms;
+        }
 
-        
-        
+        if ((now_ms - last_heartbeat_ms_) >= CAN_HEARTBEAT_PERIOD_MS) {
+            send_heartbeat(now_ms);
+            last_heartbeat_ms_ = now_ms;
+        }
 
-        if (canbus_.receive(&rx_frame))
-            printf("RX OK\n");
-        
         osDelay(CAN_DELAY_MS);
     }
+}
+
+bool CAN_task::process_rx_frame(const CAN_Frame& frame, flight_data& shared_data) {
+    if (CAN_ID_IS_HEARTBEAT(frame.id)) {
+        HEARTBEAT_Payload payload{};
+        if (!try_unpack_frame(frame, payload)) {
+            return false;
+        }
+        record_heartbeat(payload, HAL_GetTick());
+        return false;
+    }
+
+    switch (frame.id) {
+        case CAN_ID_IMU_ACCEL: {
+            IMU_ACCEL_Payload payload{};
+            if (!try_unpack_frame(frame, payload)) {
+                return false;
+            }
+            shared_data.core_data.imu.acceleration.x = payload.ax / 100.0f;
+            shared_data.core_data.imu.acceleration.y = payload.ay / 100.0f;
+            shared_data.core_data.imu.acceleration.z = payload.az / 100.0f;
+            shared_data.core_data.time = payload.timestamp_ms;
+            return true;
+        }
+
+        case CAN_ID_IMU_GYRO: {
+            IMU_GYRO_Payload payload{};
+            if (!try_unpack_frame(frame, payload)) {
+                return false;
+            }
+            shared_data.core_data.imu.gyro.x = payload.gx;
+            shared_data.core_data.imu.gyro.y = payload.gy;
+            shared_data.core_data.imu.gyro.z = payload.gz;
+            shared_data.core_data.time = payload.timestamp_ms;
+            return true;
+        }
+
+        case CAN_ID_BARO: {
+            BARO_Payload payload{};
+            if (!try_unpack_frame(frame, payload)) {
+                return false;
+            }
+            shared_data.core_data.barometer.pressure =
+                static_cast<int32_t>(payload.pressure);
+            shared_data.core_data.barometer.temperature = payload.temp / 100.0f;
+            shared_data.core_data.time = payload.timestamp_ms;
+            return true;
+        }
+
+        case CAN_ID_KALMANN: {
+            KALMANN_Payload payload{};
+            if (!try_unpack_frame(frame, payload)) {
+                return false;
+            }
+            shared_data.prediction.acceleration = payload.accleration / 100.0f;
+            shared_data.prediction.altitude = payload.altitude_m;
+            shared_data.prediction.velocity = payload.vspeed_cms / 100.0f;
+            shared_data.core_data.time = payload.timestamp_ms;
+            return true;
+        }
+
+        case CAN_ID_FLIGHT_STATE: {
+            FLIGHT_STATE_Payload payload{};
+            if (!try_unpack_frame(frame, payload)) {
+                return false;
+            }
+            shared_data.state = payload.state;
+            shared_data.time = payload.timestamp_ms;
+            flight_state_ = payload.state;
+            return true;
+        }
+
+        default:
+            return false;
+    }
+}
+
+void CAN_task::send_flight_data(const flight_data& data) {
+    const uint16_t timestamp =
+        static_cast<uint16_t>(data.core_data.time & 0xFFFFU);
+
+    IMU_ACCEL_Payload accel_payload{
+        static_cast<int16_t>(data.core_data.imu.acceleration.x * 100.0f),
+        static_cast<int16_t>(data.core_data.imu.acceleration.y * 100.0f),
+        static_cast<int16_t>(data.core_data.imu.acceleration.z * 100.0f),
+        timestamp
+    };
+    CAN_Frame accel_frame = pack_frame(CAN_ID_IMU_ACCEL, accel_payload);
+    send_frame(accel_frame);
+
+    IMU_GYRO_Payload gyro_payload{
+        data.core_data.imu.gyro.x,
+        data.core_data.imu.gyro.y,
+        data.core_data.imu.gyro.z,
+        timestamp
+    };
+    CAN_Frame gyro_frame = pack_frame(CAN_ID_IMU_GYRO, gyro_payload);
+    send_frame(gyro_frame);
+
+    BARO_Payload baro_payload{
+        static_cast<uint32_t>(data.core_data.barometer.pressure),
+        static_cast<int16_t>(data.core_data.barometer.temperature * 100.0f),
+        timestamp
+    };
+    CAN_Frame baro_frame = pack_frame(CAN_ID_BARO, baro_payload);
+    send_frame(baro_frame);
+
+    KALMANN_Payload kalman_payload{
+        static_cast<int16_t>(data.prediction.acceleration * 100.0f),
+        static_cast<int16_t>(data.prediction.altitude),
+        static_cast<int16_t>(data.prediction.velocity * 100.0f),
+        timestamp
+    };
+    CAN_Frame kalman_frame = pack_frame(CAN_ID_KALMANN, kalman_payload);
+    send_frame(kalman_frame);
+
+    FLIGHT_STATE_Payload state_payload{
+        static_cast<uint8_t>(data.state),
+        0U,
+        timestamp
+    };
+    CAN_Frame state_frame = pack_frame(CAN_ID_FLIGHT_STATE, state_payload);
+    send_frame(state_frame);
+}
+
+void CAN_task::send_heartbeat(uint32_t now_ms) {
+    uint8_t err = 0U;
+    if (canbus_.is_bus_off()) {
+        err |= CAN_HEARTBEAT_ERR_BUS_OFF;
+    }
+    if (canbus_.error() != 0U) {
+        err |= CAN_HEARTBEAT_ERR_CAN_ERROR;
+    }
+    if (tx_retry_drops_ != 0U) {
+        err |= CAN_HEARTBEAT_ERR_TX_DROP;
+    }
+    if (node_timeout_count_ != 0U) {
+        err |= CAN_HEARTBEAT_ERR_NODE_TIMEOUT;
+    }
+
+    HEARTBEAT_Payload payload{
+        node_id_,
+        flight_state_,
+        err,
+        static_cast<uint8_t>((now_ms / 1000U) & 0xFFU)
+    };
+    CAN_Frame frame = pack_frame(CAN_ID_HEARTBEAT, payload);
+    send_frame(frame);
+}
+
+void CAN_task::service_bus_health(uint32_t now_ms) {
+#if CAN_AUTO_RECOVER_BUS_OFF
+    if (!canbus_.is_bus_off()) {
+        return;
+    }
+
+    if ((now_ms - last_bus_recovery_ms_) < CAN_BUS_RECOVERY_PERIOD_MS) {
+        return;
+    }
+
+    (void)canbus_.recover_from_bus_off();
+    last_bus_recovery_ms_ = now_ms;
+#else
+    (void)now_ms;
+#endif
+}
+
+void CAN_task::flush_tx_queue() {
+    for (uint8_t sent = 0U;
+         sent < CAN_TX_DRAIN_BUDGET_PER_LOOP && tx_retry_count_ > 0U;
+         ++sent) {
+        CAN_Frame& frame = tx_retry_queue_[tx_retry_head_];
+        if (!canbus_.send(&frame)) {
+            return;
+        }
+
+        tx_retry_head_ = static_cast<uint8_t>(
+            (tx_retry_head_ + 1U) % CAN_TX_RETRY_QUEUE_LEN);
+        --tx_retry_count_;
+    }
+}
+
+bool CAN_task::queue_tx_frame(const CAN_Frame& frame) {
+    if (tx_retry_count_ >= CAN_TX_RETRY_QUEUE_LEN) {
+        tx_retry_head_ = static_cast<uint8_t>(
+            (tx_retry_head_ + 1U) % CAN_TX_RETRY_QUEUE_LEN);
+        --tx_retry_count_;
+        ++tx_retry_drops_;
+    }
+
+    tx_retry_queue_[tx_retry_tail_] = frame;
+    tx_retry_tail_ = static_cast<uint8_t>(
+        (tx_retry_tail_ + 1U) % CAN_TX_RETRY_QUEUE_LEN);
+    ++tx_retry_count_;
+    return true;
+}
+
+void CAN_task::record_heartbeat(const HEARTBEAT_Payload& heartbeat,
+                                uint32_t now_ms) {
+    if (heartbeat.node_id == node_id_ || heartbeat.node_id == 0U) {
+        return;
+    }
+
+    for (NodeStatus& node : nodes_) {
+        if (node.active && node.node_id == heartbeat.node_id) {
+            node.state = heartbeat.state;
+            node.err = heartbeat.err;
+            node.tx_error_count = 0U;
+            node.rx_error_count = 0U;
+            node.tx_queue_depth = 0U;
+            node.uptime_s = heartbeat.uptime_s;
+            node.last_seen_ms = now_ms;
+            ++node.rx_count;
+            return;
+        }
+    }
+
+    for (NodeStatus& node : nodes_) {
+        if (!node.active) {
+            node.active = true;
+            node.node_id = heartbeat.node_id;
+            node.state = heartbeat.state;
+            node.err = heartbeat.err;
+            node.tx_error_count = 0U;
+            node.rx_error_count = 0U;
+            node.tx_queue_depth = 0U;
+            node.uptime_s = heartbeat.uptime_s;
+            node.last_seen_ms = now_ms;
+            node.rx_count = 1U;
+            return;
+        }
+    }
+}
+
+void CAN_task::expire_node_status(uint32_t now_ms) {
+    for (NodeStatus& node : nodes_) {
+        if (!node.active) {
+            continue;
+        }
+
+        if ((now_ms - node.last_seen_ms) >= CAN_NODE_TIMEOUT_MS) {
+            node.active = false;
+            node.err = 1U;
+            ++node_timeout_count_;
+        }
+    }
+}
+
+bool CAN_task::send_frame(CAN_Frame& frame) {
+    if (tx_retry_count_ != 0U) {
+        return queue_tx_frame(frame);
+    }
+
+    if (canbus_.send(&frame)) {
+        return true;
+    }
+
+    return queue_tx_frame(frame);
 }
 
 }
