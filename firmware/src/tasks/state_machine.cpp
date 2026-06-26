@@ -125,7 +125,7 @@ void StateMachine::check_ready_state_done(float accel)
     //float accel = (accel_x * accel_x) + (accel_y * accel_y) + (accel_z * accel_z);
 
     //printf("State Machine: Ready, accel: %f, threshold: %f \n", fabsf(accel), (static_cast<float>(liftoff_threshold)/9.81));
-    if (fabsf(accel) > (static_cast<float>(liftoff_threshold)/9.81f))
+    if (fabsf(accel) > (static_cast<float>(liftoff_threshold)))
     {
         change_state(State::POWERED);
     }
