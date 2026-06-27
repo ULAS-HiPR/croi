@@ -17,10 +17,15 @@
 
 #define FSM_DELAY_MS 100
 
+struct LoggerHealth;
+
 namespace task{
 class StateMachine {
     public:
-        StateMachine(IMU *imu, Baro *baro, const flash_internal_data* settings, osMessageQueueId_t can_queue, osMessageQueueId_t logger_queue);
+        StateMachine(IMU *imu, Baro *baro, const flash_internal_data* settings,
+                     osMessageQueueId_t can_queue,
+                     osMessageQueueId_t logger_queue,
+                     const LoggerHealth* logger_health = nullptr);
               
         //should put this in data.h
         enum State {
@@ -33,7 +38,7 @@ class StateMachine {
             LANDED,
         };
         void run();
-        State current_state;
+        State current_state{State::CALIBRATING};
 
     private:
         void StartStateMachine();
@@ -47,6 +52,7 @@ class StateMachine {
         void check_drouge_state_done(float height);
         void check_main_state_done(float height);
         void change_state(State new_state);
+        bool logging_preflight_ok() const;
         
         IMU *imu_;
         Baro *baro_;
@@ -60,6 +66,7 @@ class StateMachine {
 
         osMessageQueueId_t can_queue_;
         osMessageQueueId_t logger_queue_;
+        const LoggerHealth* logger_health_;
         osThreadId_t taskHandle_;
         
 

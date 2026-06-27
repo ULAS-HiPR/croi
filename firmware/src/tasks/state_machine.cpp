@@ -1,9 +1,14 @@
 #include "state_machine.h"
+#include "logger.h"
 
 namespace task{
-StateMachine::StateMachine(IMU *imu, Baro *baro, const flash_internal_data* settings, osMessageQueueId_t can_queue, osMessageQueueId_t logger_queue)
+StateMachine::StateMachine(IMU *imu, Baro *baro, const flash_internal_data* settings,
+                           osMessageQueueId_t can_queue,
+                           osMessageQueueId_t logger_queue,
+                           const LoggerHealth* logger_health)
     : imu_(imu), baro_(baro), main_height(settings->main_height), drouge_delay(settings->drouge_delay),
-      liftoff_threshold(settings->liftoff_thresh), can_queue_(can_queue), logger_queue_(logger_queue), taskHandle_(nullptr)
+      liftoff_threshold(settings->liftoff_thresh), can_queue_(can_queue),
+      logger_queue_(logger_queue), logger_health_(logger_health), taskHandle_(nullptr)
 {
     // Initialize the state machine with function pointer array
     //to add 
@@ -34,7 +39,6 @@ void StateMachine::StartStateMachine() {
     flight_data raw_data{};
     flight_data old_data{};
     raw_data.state = current_state; 
-    imu_data imu_data{};
 
     for (;;)
     {
@@ -121,12 +125,20 @@ void StateMachine::update_state(const core_flight_data raw_data, prediction_data
 void StateMachine::check_calibrating_state_done()
 {
     // printf("State Machine\n");
+    if (!logging_preflight_ok()) {
+        return;
+    }
+
     change_state(State::READY);
     return;
 }
 
 void StateMachine::check_ready_state_done(float accel)
 {
+    if (!logging_preflight_ok()) {
+        return;
+    }
+
     //float accel = (accel_x * accel_x) + (accel_y * accel_y) + (accel_z * accel_z);
 
     //printf("State Machine: Ready, accel: %f, threshold: %f \n", fabsf(accel), (static_cast<float>(liftoff_threshold)/9.81));
@@ -185,6 +197,17 @@ void StateMachine::change_state(State new_state)
         //}
         current_state = new_state;
     }
+}
+
+bool StateMachine::logging_preflight_ok() const
+{
+    if (logger_health_ == nullptr) {
+        return true;
+    }
+
+    return logger_health_->preflight_ok &&
+           !logger_health_->fault_latched &&
+           !logger_health_->logging_stopped;
 }
 
 }
