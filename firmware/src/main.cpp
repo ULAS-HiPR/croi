@@ -19,6 +19,12 @@
 #include <CAN/CAN_STM.h>
 #endif
 
+#if defined(READING) && defined(F0)
+#include "tasks/flash_readout_task.h"
+#include <Flash/MX25L128.h>
+#include <SPI/SPI_STM.h>
+#endif
+
 
 void SystemClock_Config(void);
 void Error_Handler(void);
@@ -37,6 +43,14 @@ int main(void)
     SystemClock_Config();
     osKernelInitialize();
 
+#if defined(READING) && defined(F0)
+    MX_GPIO_Init();
+    MX_SPI1_Init();
+    static SPI_STM flash_spi(&hspi1, FLASH_CS_GPIO_Port, FLASH_CS_Pin);
+    static MX25L128 flash(flash_spi);
+    static task::FlashReadoutTask flash_readout_task(flash);
+    flash_readout_task.run();
+#else
     osMessageQueueId_t canReciverQueueHandle = osMessageQueueNew(4, sizeof(flight_data), &canRQueue_attributes);
     osMessageQueueId_t canSenderQueueHandle = osMessageQueueNew(4, sizeof(flight_data), &canSQueue_attributes);
     if (canReciverQueueHandle == nullptr || canSenderQueueHandle == nullptr) {
@@ -59,6 +73,7 @@ int main(void)
       static task::CAN_task can_task(canbus, canSenderQueueHandle, canReciverQueueHandle, NODE_CROI);
       can_task.run();
     #endif
+#endif
 
     osKernelStart();
     // never get here 
