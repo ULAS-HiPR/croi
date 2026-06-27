@@ -10,9 +10,13 @@
 
 extern "C" {
 volatile uint32_t g_flash_csv_ready = 0U;
+volatile uint32_t g_flash_csv_done = 0U;
 volatile uint32_t g_flash_csv_len = 0U;
 volatile uint32_t g_flash_csv_error = 0U;
 volatile uint32_t g_flash_csv_records = 0U;
+volatile uint32_t g_flash_csv_chunk_index = 0U;
+volatile uint32_t g_flash_csv_chunk_records = 0U;
+volatile uint32_t g_flash_csv_total_len = 0U;
 volatile uint32_t g_flash_csv_truncated = 0U;
 char g_flash_csv_dump[FLASH_READOUT_CSV_CAPACITY] = {};
 }
@@ -23,6 +27,14 @@ constexpr uint32_t CSV_ERROR_FLASH_INIT = 1U << 0;
 constexpr uint32_t CSV_ERROR_LOG_BEGIN = 1U << 1;
 constexpr uint32_t CSV_ERROR_READ = 1U << 2;
 constexpr uint32_t CSV_ERROR_TRUNCATED = 1U << 3;
+constexpr uint32_t CSV_ERROR_ROW_TOO_LARGE = 1U << 4;
+
+constexpr const char* CSV_HEADER =
+    "row,run_id,sequence,timestamp_ms,payload_type,payload_version,payload_length,status,"
+    "flight_time_ms,state,pred_alt_mm,pred_vel_mms,pred_accel_mg,core_time_ms,"
+    "pressure_pa,baro_temp_centi,baro_alt_mm,ax_mg,ay_mg,az_mg,gx,gy,gz,imu_temp,"
+    "gps_time,gps_lat_e7,gps_lon_e7,gps_alt_mm,gps_vel_mms,gps_sats,"
+    "sec_ax_mg,sec_ay_mg,sec_az_mg\r\n";
 
 constexpr uint32_t max_payload_size() {
     return sizeof(flight_data) > sizeof(secondary_flight_data)
@@ -33,6 +45,12 @@ constexpr uint32_t max_payload_size() {
 class CsvBuffer {
 public:
     CsvBuffer(char* data, uint32_t capacity) : data_(data), capacity_(capacity) {
+        reset();
+    }
+
+    void reset() {
+        size_ = 0U;
+        truncated_ = false;
         if (capacity_ > 0U) {
             data_[0] = '\0';
         }
@@ -74,10 +92,12 @@ public:
 
     uint32_t size() const { return size_; }
     bool truncated() const { return truncated_; }
-
-private:
-    bool full() const {
-        return (capacity_ == 0U) || (size_ >= (capacity_ - 1U));
+    bool can_fit(uint32_t length) const { return length <= remaining(); }
+    uint32_t remaining() const {
+        if (full()) {
+            return 0U;
+        }
+        return (capacity_ - 1U) - size_;
     }
 
     void append_bytes(const char* text, uint32_t length) {
@@ -86,7 +106,7 @@ private:
             return;
         }
 
-        const uint32_t available = (capacity_ - 1U) - size_;
+        const uint32_t available = remaining();
         const uint32_t copied = length < available ? length : available;
         std::memcpy(&data_[size_], text, copied);
         size_ += copied;
@@ -95,6 +115,11 @@ private:
         if (copied != length) {
             truncated_ = true;
         }
+    }
+
+private:
+    bool full() const {
+        return (capacity_ == 0U) || (size_ >= (capacity_ - 1U));
     }
 
     char* data_;
@@ -226,6 +251,40 @@ bool final_status_is_error(FlashLogStatus status) {
            (status != FlashLogStatus::Full);
 }
 
+void debug_break() {
+    __asm volatile ("bkpt #0");
+}
+
+uint32_t format_row(char* row_buffer,
+                    uint32_t row_capacity,
+                    uint32_t row,
+                    const FlashLogRecordHeader& header,
+                    const uint8_t* payload,
+                    size_t payload_length,
+                    bool& truncated) {
+    CsvBuffer row_csv(row_buffer, row_capacity);
+
+    if (header.payload_type == static_cast<uint16_t>(FlashLogPayloadType::FlightData)) {
+        append_flight_row(row_csv, row, header, payload, payload_length);
+    } else if (header.payload_type == static_cast<uint16_t>(FlashLogPayloadType::SecondaryFlightData)) {
+        append_secondary_row(row_csv, row, header, payload, payload_length);
+    } else {
+        append_unknown_row(row_csv, row, header, "unknown_payload");
+    }
+
+    truncated = row_csv.truncated();
+    return row_csv.size();
+}
+
+void publish_chunk(CsvBuffer& chunk, bool done) {
+    g_flash_csv_len = chunk.size();
+    g_flash_csv_done = done ? 1U : 0U;
+    g_flash_csv_ready = 1U;
+    g_flash_csv_total_len += g_flash_csv_len;
+    debug_break();
+    g_flash_csv_ready = 0U;
+}
+
 } // namespace
 
 namespace task {
@@ -234,6 +293,7 @@ void FlashReadoutTask::run() {
     taskHandle_ = osThreadNew(&FlashReadoutTask::entry, this, &task_attributes_);
     if (taskHandle_ == nullptr) {
         g_flash_csv_error |= CSV_ERROR_READ;
+        g_flash_csv_done = 1U;
         g_flash_csv_ready = 1U;
     }
 }
@@ -247,19 +307,22 @@ void FlashReadoutTask::entry(void* argument) {
 
 void FlashReadoutTask::start() {
     g_flash_csv_ready = 0U;
+    g_flash_csv_done = 0U;
     g_flash_csv_len = 0U;
     g_flash_csv_error = 0U;
     g_flash_csv_records = 0U;
+    g_flash_csv_chunk_index = 0U;
+    g_flash_csv_chunk_records = 0U;
+    g_flash_csv_total_len = 0U;
     g_flash_csv_truncated = 0U;
     std::memset(g_flash_csv_dump, 0, FLASH_READOUT_CSV_CAPACITY);
 
-    CsvBuffer csv(g_flash_csv_dump, FLASH_READOUT_CSV_CAPACITY);
-    csv.append("row,run_id,sequence,timestamp_ms,payload_type,payload_version,payload_length,status,flight_time_ms,state,pred_alt_mm,pred_vel_mms,pred_accel_mg,core_time_ms,pressure_pa,baro_temp_centi,baro_alt_mm,ax_mg,ay_mg,az_mg,gx,gy,gz,imu_temp,gps_time,gps_lat_e7,gps_lon_e7,gps_alt_mm,gps_vel_mms,gps_sats,sec_ax_mg,sec_ay_mg,sec_az_mg\r\n");
+    CsvBuffer chunk(g_flash_csv_dump, FLASH_READOUT_CSV_CAPACITY);
 
     if (!storage_.init()) {
+        chunk.append(CSV_HEADER);
         g_flash_csv_error |= CSV_ERROR_FLASH_INIT;
-        g_flash_csv_len = csv.size();
-        g_flash_csv_ready = 1U;
+        publish_chunk(chunk, true);
         for (;;) {
             osDelay(1000U);
         }
@@ -283,30 +346,76 @@ void FlashReadoutTask::start() {
     uint8_t payload[max_payload_size()] = {};
     size_t payload_length = 0U;
     uint32_t row = 0U;
+    bool header_pending = true;
+    bool done = false;
 
-    while (logger.read_next(cursor, header, payload, sizeof(payload), &payload_length)) {
-        ++row;
-        if (header.payload_type == static_cast<uint16_t>(FlashLogPayloadType::FlightData)) {
-            append_flight_row(csv, row, header, payload, payload_length);
-        } else if (header.payload_type == static_cast<uint16_t>(FlashLogPayloadType::SecondaryFlightData)) {
-            append_secondary_row(csv, row, header, payload, payload_length);
-        } else {
-            append_unknown_row(csv, row, header, "unknown_payload");
+    while (!done) {
+        chunk.reset();
+        g_flash_csv_chunk_records = 0U;
+
+        if (header_pending) {
+            chunk.append(CSV_HEADER);
+            header_pending = false;
         }
+
+        while (chunk.remaining() > 0U) {
+            const FlashLogCursor cursor_before = cursor;
+            if (!logger.read_next(cursor, header, payload, sizeof(payload), &payload_length)) {
+                const FlashLogStatus read_status = logger.status();
+                if (read_status != FlashLogStatus::NotFound) {
+                    g_flash_csv_error |= CSV_ERROR_READ;
+                }
+                done = true;
+                break;
+            }
+
+            char row_buffer[FLASH_READOUT_ROW_CAPACITY] = {};
+            bool row_truncated = false;
+            const uint32_t next_row = row + 1U;
+            const uint32_t row_len = format_row(row_buffer,
+                                                sizeof(row_buffer),
+                                                next_row,
+                                                header,
+                                                payload,
+                                                payload_length,
+                                                row_truncated);
+            if (row_truncated) {
+                g_flash_csv_error |= CSV_ERROR_ROW_TOO_LARGE;
+                g_flash_csv_truncated = 1U;
+            }
+
+            if (!chunk.can_fit(row_len)) {
+                if (g_flash_csv_chunk_records == 0U) {
+                    chunk.append_bytes(row_buffer, row_len);
+                    row = next_row;
+                    ++g_flash_csv_chunk_records;
+                    g_flash_csv_records = row;
+                    if (chunk.truncated()) {
+                        g_flash_csv_error |= CSV_ERROR_TRUNCATED;
+                        g_flash_csv_truncated = 1U;
+                    }
+                } else {
+                    cursor = cursor_before;
+                }
+                break;
+            }
+
+            chunk.append_bytes(row_buffer, row_len);
+            row = next_row;
+            ++g_flash_csv_chunk_records;
+            g_flash_csv_records = row;
+        }
+
+        if (chunk.truncated()) {
+            g_flash_csv_error |= CSV_ERROR_TRUNCATED;
+            g_flash_csv_truncated = 1U;
+        }
+
+        publish_chunk(chunk, done);
+        ++g_flash_csv_chunk_index;
     }
 
-    const FlashLogStatus read_status = logger.status();
-    if (read_status != FlashLogStatus::NotFound) {
-        g_flash_csv_error |= CSV_ERROR_READ;
-    }
-
-    if (csv.truncated()) {
-        g_flash_csv_error |= CSV_ERROR_TRUNCATED;
-        g_flash_csv_truncated = 1U;
-    }
-
-    g_flash_csv_records = row;
-    g_flash_csv_len = csv.size();
+    g_flash_csv_done = 1U;
     g_flash_csv_ready = 1U;
 
     for (;;) {
