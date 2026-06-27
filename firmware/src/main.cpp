@@ -67,11 +67,11 @@ int main(void)
 
     SPI_Handler* spi_handler_baro = new SPI_STM(&hspi1, BARO_CS_PORT, BARO_CS_PIN);
     SPI_Handler* spi_handler_imu = new SPI_STM(&hspi1, IMU_CS_PORT, IMU_CS_PIN);
-    //SPI_Handler* spi_handler_flash = new SPI_STM(&hspi1, FLASH_CS_PORT, FLASH_CS_PIN);
+    SPI_Handler* spi_handler_flash = new SPI_STM(&hspi1, FLASH_CS_PORT, FLASH_CS_PIN);
 
     bool init_status = true;
-    //Flash* flash_memory = new MX25L128(*spi_handler_flash);
-    //init_status &= flash_memory->init();
+    Flash* flash_memory = new MX25L128(*spi_handler_flash);
+    
     
     IMU* imu = new LSM6DSO32(*spi_handler_imu);
     Baro* baro = new MS5607(*spi_handler_baro);
@@ -83,12 +83,12 @@ int main(void)
 
     init_status &= imu->init();
     init_status &= baro->init();
+   
+    printf("Init status: %s\n", init_status ? "OK" : "FAIL");
 
-    //fake memory location
-    uint8_t buffer[sizeof(flash_internal_data)];
-    //bool read_correctly = flash_memory->read(0x00, &buffer[0], sizeof(flash_internal_data));
-    //flash_internal_data* settings = reinterpret_cast<flash_internal_data*>(buffer);
-    // test settings
+    static LoggerHealth logger_health;
+
+    // test settings -> should be put into flash in future
     flash_internal_data* settings = new flash_internal_data{
         .main_height = 200,
         .drouge_delay = 0,
@@ -111,12 +111,15 @@ int main(void)
 
     static task::StateMachine state_machine(imu, baro, settings, canSenderQueueHandle, loggingQueueHandle);
     static task::CAN_task can_task(canbus, canSenderQueueHandle, canReciverQueueHandle, NODE_CROI);
-      
-    //static task::Logger logger(flash_memory, loggingQueueHandle, canReciverQueueHandle);
+    static task::Logger logger(flash_memory, loggingQueueHandle, canReciverQueueHandle, &logger_health);
 
+    #ifndef READING
     can_task.run();
     state_machine.run();
-    //logger.run();
+    logger.run();
+    #else
+    logger.run();
+    #endif
     //size_t freeHeap = xPortGetFreeHeapSize();
     //printf("Free heap size: %u bytes\n", freeHeap);
 

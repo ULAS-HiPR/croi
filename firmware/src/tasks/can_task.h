@@ -15,7 +15,7 @@
 #include <CAN/CAN_Handler.h>
 #include <CAN/CAN_Frames.h>
 
-#define CAN_DELAY_MS 200
+#define CAN_DELAY_MS 100
 #define CAN_HEARTBEAT_PERIOD_MS 1000U
 #define CAN_FLIGHT_TX_MIN_PERIOD_MS 20U
 #define CAN_BUS_RECOVERY_PERIOD_MS 250U

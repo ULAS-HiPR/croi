@@ -122,32 +122,6 @@ void CAN_task::send_flight_data(const flight_data& data) {
     const uint16_t timestamp =
         static_cast<uint16_t>(data.core_data.time & 0xFFFFU);
 
-    IMU_ACCEL_Payload accel_payload{
-        static_cast<int16_t>(data.core_data.imu.acceleration.x * 100.0f),
-        static_cast<int16_t>(data.core_data.imu.acceleration.y * 100.0f),
-        static_cast<int16_t>(data.core_data.imu.acceleration.z * 100.0f),
-        timestamp
-    };
-    CAN_Frame accel_frame = pack_frame(CAN_ID_IMU_ACCEL, accel_payload);
-    send_frame(accel_frame);
-
-    IMU_GYRO_Payload gyro_payload{
-        data.core_data.imu.gyro.x,
-        data.core_data.imu.gyro.y,
-        data.core_data.imu.gyro.z,
-        timestamp
-    };
-    CAN_Frame gyro_frame = pack_frame(CAN_ID_IMU_GYRO, gyro_payload);
-    send_frame(gyro_frame);
-
-    BARO_Payload baro_payload{
-        static_cast<uint32_t>(data.core_data.barometer.pressure),
-        static_cast<int16_t>(data.core_data.barometer.temperature * 100.0f),
-        timestamp
-    };
-    CAN_Frame baro_frame = pack_frame(CAN_ID_BARO, baro_payload);
-    send_frame(baro_frame);
-
     KALMANN_Payload kalman_payload{
         static_cast<int16_t>(data.prediction.acceleration * 100.0f),
         static_cast<int16_t>(data.prediction.altitude),
@@ -164,6 +138,34 @@ void CAN_task::send_flight_data(const flight_data& data) {
     };
     CAN_Frame state_frame = pack_frame(CAN_ID_FLIGHT_STATE, state_payload);
     send_frame(state_frame);
+
+    BARO_Payload baro_payload{
+        static_cast<uint32_t>(data.core_data.barometer.pressure),
+        static_cast<int16_t>(data.core_data.barometer.temperature * 100.0f),
+        timestamp
+    };
+    CAN_Frame baro_frame = pack_frame(CAN_ID_BARO, baro_payload);
+    send_frame(baro_frame);
+
+    IMU_ACCEL_Payload accel_payload{
+    static_cast<int16_t>(data.core_data.imu.acceleration.x * 100.0f),
+    static_cast<int16_t>(data.core_data.imu.acceleration.y * 100.0f),
+    static_cast<int16_t>(data.core_data.imu.acceleration.z * 100.0f),
+    timestamp
+    };
+
+    CAN_Frame accel_frame = pack_frame(CAN_ID_IMU_ACCEL, accel_payload);
+    send_frame(accel_frame);
+
+    IMU_GYRO_Payload gyro_payload{
+        static_cast<int16_t>(data.core_data.imu.gyro.x * 100.0f),
+        static_cast<int16_t>(data.core_data.imu.gyro.y * 100.0f),
+        static_cast<int16_t>(data.core_data.imu.gyro.z * 100.0f),
+        timestamp
+    };
+
+    CAN_Frame gyro_frame = pack_frame(CAN_ID_IMU_GYRO, gyro_payload);
+    send_frame(gyro_frame);
 }
 
 void CAN_task::send_heartbeat(uint32_t now_ms) {

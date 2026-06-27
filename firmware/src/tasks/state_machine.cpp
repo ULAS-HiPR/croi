@@ -49,7 +49,6 @@ void StateMachine::StartStateMachine() {
         }
 
         raw_data.core_data.time = time;
-        raw_data.time = time;
 
         kalman_filter_->predict(time_diff);
         if (raw_data.state > 4)
@@ -57,10 +56,7 @@ void StateMachine::StartStateMachine() {
             //acceleration not relivant after apogee
             raw_data.core_data.imu.acceleration.y = 0.0000f;
         }
-
-        float accel_up_no_gravity = (raw_data.core_data.imu.acceleration.x*-9.81f) + (9.81f);
-
-        kalman_filter_->update(raw_data.core_data.barometer.altitude, accel_up_no_gravity, (raw_data.core_data.imu.acceleration.y*9.81),(raw_data.core_data.imu.acceleration.z*9.81));
+        kalman_filter_->update(raw_data.core_data.barometer.altitude, raw_data.core_data.imu.acceleration.x, raw_data.core_data.imu.acceleration.y,raw_data.core_data.imu.acceleration.z);
         kalman_filter_->update_values(&raw_data.prediction);
         update_state(raw_data.core_data, raw_data.prediction);
 

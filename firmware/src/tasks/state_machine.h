@@ -15,7 +15,7 @@
 #include "platform/stm_f0.h"
 #endif
 
-#define FSM_DELAY_MS 10
+#define FSM_DELAY_MS 100
 
 namespace task{
 class StateMachine {

@@ -328,5 +328,4 @@ void MX_TIM3_Init(void)
         __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, 0);
     }
 }
-
 #endif // F0
