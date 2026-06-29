@@ -105,8 +105,8 @@ bool CAN_task::process_rx_frame(const CAN_Frame& frame, secondary_flight_data& s
                         return false;
                 }
 
-                shared_data.canards.kp = static_cast<float>(payload.kp) / 1000.0f;
-                shared_data.canards.kd = static_cast<float>(payload.kd) / 1000.0f;
+                shared_data.canards.kp = static_cast<float>(payload.kp) / 100.0f;
+                shared_data.canards.kd = static_cast<float>(payload.kd) / 100.0f;
                 shared_data.canards.servo_angle = static_cast<float>(payload.servo_angle) / 100.0f;
                 shared_data.canards.active = (payload.active != 0);
 
@@ -131,18 +131,10 @@ void CAN_task::send_flight_data(const flight_data& data) {
     CAN_Frame kalman_frame = pack_frame(CAN_ID_KALMANN, kalman_payload);
     send_frame(kalman_frame);
 
-    FLIGHT_STATE_Payload state_payload{
-        static_cast<uint8_t>(data.state),
-        0U,
-        timestamp
-    };
-    CAN_Frame state_frame = pack_frame(CAN_ID_FLIGHT_STATE, state_payload);
-    send_frame(state_frame);
-
     BARO_Payload baro_payload{
         static_cast<uint32_t>(data.core_data.barometer.pressure),
         static_cast<int16_t>(data.core_data.barometer.temperature * 100.0f),
-        timestamp
+        static_cast<int16_t>(data.core_data.barometer.altitude * 10.0f)
     };
     CAN_Frame baro_frame = pack_frame(CAN_ID_BARO, baro_payload);
     send_frame(baro_frame);
@@ -156,6 +148,14 @@ void CAN_task::send_flight_data(const flight_data& data) {
 
     CAN_Frame accel_frame = pack_frame(CAN_ID_IMU_ACCEL, accel_payload);
     send_frame(accel_frame);
+
+     FLIGHT_STATE_Payload state_payload{
+        static_cast<uint8_t>(data.state),
+        0U,
+        timestamp
+    };
+    CAN_Frame state_frame = pack_frame(CAN_ID_FLIGHT_STATE, state_payload);
+    send_frame(state_frame);
 
     IMU_GYRO_Payload gyro_payload{
         static_cast<int16_t>(data.core_data.imu.gyro.x * 100.0f),
