@@ -1,8 +1,23 @@
 #include "CAN_task.h"
+#include "croi_status.h"
 
 namespace task {
 
 namespace {
+
+constexpr uint16_t kMissionTag =
+    static_cast<uint16_t>(CROI_MISSION_CONFIG_CRC32 & 0xFFFFU);
+
+constexpr uint8_t configured_pyro_mask() {
+    uint8_t mask = 0U;
+#if CROI_MISSION_PYRO_DROGUE_CHANNEL >= 0
+    mask |= static_cast<uint8_t>(1U << CROI_MISSION_PYRO_DROGUE_CHANNEL);
+#endif
+#if CROI_MISSION_PYRO_MAIN_CHANNEL >= 0
+    mask |= static_cast<uint8_t>(1U << CROI_MISSION_PYRO_MAIN_CHANNEL);
+#endif
+    return mask;
+}
 
 void put_drop_oldest(osMessageQueueId_t queue, const secondary_flight_data& data) {
     if (osMessageQueuePut(queue, &data, 0U, 0U) == osOK) {
@@ -16,10 +31,11 @@ void put_drop_oldest(osMessageQueueId_t queue, const secondary_flight_data& data
 
 }
 
-void CAN_task::run() {
+bool CAN_task::run() {
     taskHandle_ = osThreadNew(&CAN_task::StartCANEntry,
                               this,
                               &task_attributes);
+    return taskHandle_ != nullptr;
 }
 
 void CAN_task::StartCANEntry(void *argument) {
@@ -39,6 +55,13 @@ void CAN_task::StartCAN() {
 
     for (;;) {
         const uint32_t now_ms = HAL_GetTick();
+
+        while (osMessageQueueGet(sender_queue_, &outbound_data, nullptr, 0U) == osOK) {
+            pending_outbound_data_ = outbound_data;
+            flight_state_ = static_cast<uint8_t>(outbound_data.state);
+            has_pending_outbound_data_ = true;
+        }
+
         service_bus_health(now_ms);
         expire_node_status(now_ms);
         flush_tx_queue();
@@ -54,12 +77,6 @@ void CAN_task::StartCAN() {
         }
 
 
-        while (osMessageQueueGet(sender_queue_, &outbound_data, nullptr, 0U) == osOK) {
-            pending_outbound_data_ = outbound_data;
-            flight_state_ = static_cast<uint8_t>(outbound_data.state);
-            has_pending_outbound_data_ = true;
-        }
-
         if (has_pending_outbound_data_ &&
             (now_ms - last_flight_tx_ms_) >= CAN_FLIGHT_TX_MIN_PERIOD_MS) {
             send_flight_data(pending_outbound_data_);
@@ -67,13 +84,194 @@ void CAN_task::StartCAN() {
             last_flight_tx_ms_ = now_ms;
         }
 
+        service_airbrake_command(now_ms, shared_data);
+        service_pyro_commands(now_ms, shared_data);
+
         if ((now_ms - last_heartbeat_ms_) >= CAN_HEARTBEAT_PERIOD_MS) {
             send_heartbeat(now_ms);
             last_heartbeat_ms_ = now_ms;
         }
 
+        update_status(now_ms);
         osDelay(CAN_DELAY_MS);
     }
+}
+
+void CAN_task::log_pyro_event(secondary_flight_data& shared_data,
+                              uint32_t now_ms,
+                              PyroEventAction action,
+                              uint8_t channel,
+                              uint16_t sequence,
+                              uint8_t result,
+                              uint8_t fault) {
+    shared_data.pyro.timestamp_ms = now_ms;
+    shared_data.pyro.mission_tag = kMissionTag;
+    shared_data.pyro.sequence = sequence;
+    shared_data.pyro.channel = channel;
+    shared_data.pyro.action = static_cast<uint8_t>(action);
+    shared_data.pyro.result = result;
+    shared_data.pyro.fault = fault;
+    shared_data.pyro.armed_mask = pyro_armed_mask_;
+    shared_data.pyro.continuity_mask = pyro_continuity_mask_;
+    shared_data.pyro.fired_mask = pyro_fired_mask_;
+    put_drop_oldest(reciver_queue_, shared_data);
+}
+
+bool CAN_task::send_pyro_arm(uint8_t channel_mask,
+                             uint32_t now_ms,
+                             secondary_flight_data& shared_data) {
+    ++pyro_sequence_;
+    if (pyro_sequence_ == 0U) {
+        ++pyro_sequence_;
+    }
+    PYRO_ARM_Payload payload{
+        channel_mask,
+        PYRO_COMMAND_ARM,
+        pyro_sequence_,
+        kMissionTag,
+        pyro_command_tag(PYRO_COMMAND_ARM, channel_mask, pyro_sequence_, kMissionTag),
+    };
+    CAN_Frame frame = pack_frame(CAN_ID_PYRO_ARM, payload);
+    if (!send_critical_frame(frame)) {
+        return false;
+    }
+    ++croi_status.pyro_arm_command_count;
+    croi_status.pyro_last_sequence = pyro_sequence_;
+    log_pyro_event(shared_data, now_ms, PyroEventAction::ArmCommand,
+                   0xFFU, pyro_sequence_, 0U, 0U);
+    return true;
+}
+
+bool CAN_task::send_pyro_fire(uint8_t channel,
+                              uint32_t now_ms,
+                              secondary_flight_data& shared_data) {
+    ++pyro_sequence_;
+    if (pyro_sequence_ == 0U) {
+        ++pyro_sequence_;
+    }
+    const uint8_t command = flight_state_ == static_cast<uint8_t>(State::DROUGE)
+        ? PYRO_COMMAND_FIRE_DROGUE
+        : PYRO_COMMAND_FIRE_MAIN;
+    PYRO_FIRE_Payload payload{
+        channel,
+        command,
+        pyro_sequence_,
+        kMissionTag,
+        pyro_command_tag(command, channel, pyro_sequence_, kMissionTag),
+    };
+    CAN_Frame frame = pack_frame(CAN_ID_PYRO_FIRE, payload);
+    if (!send_critical_frame(frame)) {
+        return false;
+    }
+    ++croi_status.pyro_fire_command_count;
+    croi_status.pyro_last_sequence = pyro_sequence_;
+    croi_status.pyro_last_channel = channel;
+    log_pyro_event(shared_data, now_ms, PyroEventAction::FireCommand,
+                   channel, pyro_sequence_, 0U, 0U);
+    return true;
+}
+
+void CAN_task::service_pyro_commands(uint32_t now_ms,
+                                     secondary_flight_data& shared_data) {
+    constexpr uint8_t configured_mask = configured_pyro_mask();
+    if (configured_mask == 0U) {
+        return;
+    }
+
+    if (flight_state_ != previous_pyro_state_) {
+        previous_pyro_state_ = flight_state_;
+        pyro_state_entry_ms_ = now_ms;
+    }
+
+    const bool active_flight =
+        flight_state_ >= static_cast<uint8_t>(State::POWERED) &&
+        flight_state_ <= static_cast<uint8_t>(State::MAIN);
+    if (!active_flight) {
+        if (pyro_armed_mask_ != 0U &&
+            (now_ms - last_pyro_arm_ms_) >= CAN_PYRO_ARM_PERIOD_MS &&
+            send_pyro_arm(0U, now_ms, shared_data)) {
+            last_pyro_arm_ms_ = now_ms;
+        }
+        return;
+    }
+
+    const uint8_t remaining_mask =
+        static_cast<uint8_t>(configured_mask & static_cast<uint8_t>(~pyro_fired_mask_));
+    if ((now_ms - last_pyro_arm_ms_) >= CAN_PYRO_ARM_PERIOD_MS &&
+        send_pyro_arm(remaining_mask, now_ms, shared_data)) {
+        last_pyro_arm_ms_ = now_ms;
+    }
+
+#if CROI_MISSION_PYRO_DROGUE_CHANNEL >= 0
+    constexpr uint8_t drogue_channel = CROI_MISSION_PYRO_DROGUE_CHANNEL;
+    constexpr uint8_t drogue_bit = static_cast<uint8_t>(1U << drogue_channel);
+    if (flight_state_ == static_cast<uint8_t>(State::DROUGE) &&
+        !drogue_fire_commanded_ &&
+        (pyro_armed_mask_ & drogue_bit) != 0U &&
+        (now_ms - pyro_state_entry_ms_) >= CAN_PYRO_FIRE_SETTLE_MS &&
+        send_pyro_fire(drogue_channel, now_ms, shared_data)) {
+        drogue_fire_commanded_ = true;
+    }
+#endif
+
+#if CROI_MISSION_PYRO_MAIN_CHANNEL >= 0
+    constexpr uint8_t main_channel = CROI_MISSION_PYRO_MAIN_CHANNEL;
+    constexpr uint8_t main_bit = static_cast<uint8_t>(1U << main_channel);
+    if (flight_state_ == static_cast<uint8_t>(State::MAIN) &&
+        !main_fire_commanded_ &&
+        (pyro_armed_mask_ & main_bit) != 0U &&
+        (now_ms - pyro_state_entry_ms_) >= CAN_PYRO_FIRE_SETTLE_MS &&
+        send_pyro_fire(main_channel, now_ms, shared_data)) {
+        main_fire_commanded_ = true;
+    }
+#endif
+}
+
+void CAN_task::service_airbrake_command(uint32_t now_ms,
+                                        secondary_flight_data& shared_data) {
+    if ((now_ms - last_actuator_command_ms_) < CAN_ACTUATOR_COMMAND_PERIOD_MS) {
+        return;
+    }
+
+    const AirbrakeCommand command = airbrake_logic_.update(
+        static_cast<State>(flight_state_), now_ms);
+    ++actuator_sequence_;
+    if (actuator_sequence_ == 0U) {
+        ++actuator_sequence_;
+    }
+
+    ActuatorCommandPayload payload{
+        command.output_index,
+        static_cast<uint8_t>(command.active ? ACTUATOR_COMMAND_FLAG_ACTIVE : 0U),
+        static_cast<int16_t>(command.angle_deg * 100U),
+        actuator_sequence_,
+        static_cast<uint16_t>(CROI_MISSION_AIRBRAKE_COMMAND_TIMEOUT_MS),
+    };
+    CAN_Frame frame = pack_frame(CAN_ID_ACTUATOR_COMMAND, payload);
+    if (!send_frame(frame)) {
+        return;
+    }
+    last_actuator_command_ms_ = now_ms;
+    ++croi_status.actuator_command_count;
+    croi_status.actuator_last_sequence = actuator_sequence_;
+    croi_status.actuator_last_output = command.output_index;
+    croi_status.actuator_last_angle_deg = command.angle_deg;
+    croi_status.actuator_active = command.active ? 1U : 0U;
+
+    const bool changed = !has_previous_airbrake_command_ ||
+        command.active != previous_airbrake_command_.active ||
+        command.output_index != previous_airbrake_command_.output_index ||
+        command.angle_deg != previous_airbrake_command_.angle_deg;
+    if (changed || (now_ms - last_actuator_log_ms_) >= 1000U) {
+        shared_data.canards.output_index = command.output_index;
+        shared_data.canards.sequence = actuator_sequence_;
+        shared_data.canards.servo_angle = static_cast<float>(command.angle_deg);
+        shared_data.canards.active = command.active;
+        put_drop_oldest(reciver_queue_, shared_data);
+        last_actuator_log_ms_ = now_ms;
+    }
+    previous_airbrake_command_ = command;
+    has_previous_airbrake_command_ = true;
 }
 
 bool CAN_task::process_rx_frame(const CAN_Frame& frame, secondary_flight_data& shared_data) {
@@ -99,18 +297,56 @@ bool CAN_task::process_rx_frame(const CAN_Frame& frame, secondary_flight_data& s
 
                 return true;
         }
-        case CAN_ID_CANARDS:{
-                CanardsPayload payload{};
+        case CAN_ID_ACTUATOR_COMMAND: {
+                ActuatorCommandPayload payload{};
                 if (!try_unpack_frame(frame, payload)) {
                         return false;
                 }
 
-                shared_data.canards.kp = static_cast<float>(payload.kp) / 100.0f;
-                shared_data.canards.kd = static_cast<float>(payload.kd) / 100.0f;
-                shared_data.canards.servo_angle = static_cast<float>(payload.servo_angle) / 100.0f;
-                shared_data.canards.active = (payload.active != 0);
+                shared_data.canards.output_index = payload.output_index;
+                shared_data.canards.sequence = payload.sequence;
+                shared_data.canards.servo_angle = static_cast<float>(payload.angle_cdeg) / 100.0f;
+                shared_data.canards.active = (payload.flags & ACTUATOR_COMMAND_FLAG_ACTIVE) != 0U;
 
                 return true;
+        }
+        case CAN_ID_PYRO_STATUS: {
+                PYRO_STATUS_Payload payload{};
+                if (!try_unpack_frame(frame, payload)) {
+                    return false;
+                }
+                pyro_armed_mask_ = payload.armed;
+                pyro_continuity_mask_ = payload.cont_check;
+                pyro_fired_mask_ = payload.fired;
+                if (pyro_sequence_newer(payload.last_sequence, pyro_sequence_)) {
+                    pyro_sequence_ = payload.last_sequence;
+                }
+                ++croi_status.pyro_status_count;
+                croi_status.pyro_last_sequence = payload.last_sequence;
+                croi_status.pyro_armed_mask = payload.armed;
+                croi_status.pyro_continuity_mask = payload.cont_check;
+                croi_status.pyro_fired_mask = payload.fired;
+                log_pyro_event(shared_data, HAL_GetTick(), PyroEventAction::Status,
+                               0xFFU, payload.last_sequence, 0U, payload.faults1);
+                return false;
+        }
+        case CAN_ID_PYRO_ACK: {
+                PYRO_ACK_Payload payload{};
+                if (!try_unpack_frame(frame, payload) || payload.mission_tag != kMissionTag) {
+                    return false;
+                }
+                if (pyro_sequence_newer(payload.sequence, pyro_sequence_)) {
+                    pyro_sequence_ = payload.sequence;
+                }
+                ++croi_status.pyro_ack_count;
+                croi_status.pyro_last_sequence = payload.sequence;
+                croi_status.pyro_last_channel = payload.channel;
+                croi_status.pyro_last_result = payload.result;
+                croi_status.pyro_last_fault = payload.fault_code;
+                log_pyro_event(shared_data, HAL_GetTick(), PyroEventAction::Acknowledgement,
+                               payload.channel, payload.sequence,
+                               payload.result, payload.fault_code);
+                return false;
         }
 
         default:
@@ -212,6 +448,29 @@ void CAN_task::service_bus_health(uint32_t now_ms) {
 
 void CAN_task::flush_tx_queue() {
     for (uint8_t sent = 0U;
+         sent < CAN_TX_DRAIN_BUDGET_PER_LOOP && critical_tx_count_ > 0U;
+         ++sent) {
+        CAN_Frame& frame = critical_tx_queue_[critical_tx_head_];
+        if (frame.id == CAN_ID_PYRO_FIRE) {
+            PYRO_FIRE_Payload payload{};
+            if (!try_unpack_frame(frame, payload) ||
+                pyro_fire_expected_state(payload.command) != flight_state_) {
+                critical_tx_head_ = static_cast<uint8_t>(
+                    (critical_tx_head_ + 1U) % CAN_CRITICAL_TX_QUEUE_LEN);
+                --critical_tx_count_;
+                ++critical_tx_drops_;
+                continue;
+            }
+        }
+        if (!canbus_.send(&frame)) {
+            return;
+        }
+        critical_tx_head_ = static_cast<uint8_t>(
+            (critical_tx_head_ + 1U) % CAN_CRITICAL_TX_QUEUE_LEN);
+        --critical_tx_count_;
+    }
+
+    for (uint8_t sent = 0U;
          sent < CAN_TX_DRAIN_BUDGET_PER_LOOP && tx_retry_count_ > 0U;
          ++sent) {
         CAN_Frame& frame = tx_retry_queue_[tx_retry_head_];
@@ -223,6 +482,18 @@ void CAN_task::flush_tx_queue() {
             (tx_retry_head_ + 1U) % CAN_TX_RETRY_QUEUE_LEN);
         --tx_retry_count_;
     }
+}
+
+bool CAN_task::queue_critical_frame(const CAN_Frame& frame) {
+    if (critical_tx_count_ >= CAN_CRITICAL_TX_QUEUE_LEN) {
+        ++critical_tx_drops_;
+        return false;
+    }
+    critical_tx_queue_[critical_tx_tail_] = frame;
+    critical_tx_tail_ = static_cast<uint8_t>(
+        (critical_tx_tail_ + 1U) % CAN_CRITICAL_TX_QUEUE_LEN);
+    ++critical_tx_count_;
+    return true;
 }
 
 bool CAN_task::queue_tx_frame(const CAN_Frame& frame) {
@@ -301,6 +572,36 @@ bool CAN_task::send_frame(CAN_Frame& frame) {
     }
 
     return queue_tx_frame(frame);
+}
+
+bool CAN_task::send_critical_frame(CAN_Frame& frame) {
+    if (canbus_.send(&frame)) {
+        return true;
+    }
+    return queue_critical_frame(frame);
+}
+
+void CAN_task::update_status(uint32_t now_ms) {
+    uint32_t active_nodes = 0U;
+    for (const NodeStatus& node : nodes_) {
+        if (node.active) {
+            ++active_nodes;
+        }
+    }
+
+    croi_status.uptime_ms = now_ms;
+    croi_status.can_task_heartbeat_ms = now_ms;
+    croi_status.can_bus_off = canbus_.is_bus_off() ? 1U : 0U;
+    croi_status.can_error = canbus_.error();
+    croi_status.can_tx_retry_depth = tx_retry_count_;
+    croi_status.can_tx_retry_drops = tx_retry_drops_;
+    croi_status.can_node_timeout_count = node_timeout_count_;
+    croi_status.can_active_nodes = active_nodes;
+    croi_status.can_last_heartbeat_ms = last_heartbeat_ms_;
+    croi_status.can_stack_free_bytes =
+        osThreadGetStackSpace(taskHandle_) * sizeof(StackType_t);
+    croi_status.rtos_heap_free_bytes = xPortGetFreeHeapSize();
+    croi_status.pyro_critical_tx_drops = critical_tx_drops_;
 }
 
 }

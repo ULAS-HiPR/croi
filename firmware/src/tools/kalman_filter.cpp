@@ -19,6 +19,12 @@ KalmanFilter::KalmanFilter()
 }
 
 void KalmanFilter::predict(float dt) {
+    if (!std::isfinite(dt) || dt <= 0.0f) {
+        return;
+    }
+    if (dt > 0.25f) {
+        dt = 0.25f;
+    }
     const float t2 = dt * dt;
 
     float F[3][3] = {
@@ -41,16 +47,26 @@ void KalmanFilter::predict(float dt) {
 }
 
 void KalmanFilter::update(float baro_alt,
-                           float raw_accel_axis,
-                           float raw_ax,
-                           float raw_az) {
+                           float vertical_accel_m_s2,
+                           float accel_x_g,
+                           float accel_y_g,
+                           float accel_z_g) {
+    if (!std::isfinite(baro_alt) || !std::isfinite(vertical_accel_m_s2) ||
+        !std::isfinite(accel_x_g) || !std::isfinite(accel_y_g) ||
+        !std::isfinite(accel_z_g)) {
+        return;
+    }
+
     if (!calib_done_) {
-        float a = raw_ax, b = raw_accel_axis, c = raw_az;
-        calib_sum_mag_ += sqrtf(a*a + b*b + c*c);
+        const float magnitude = sqrtf(
+            accel_x_g * accel_x_g + accel_y_g * accel_y_g + accel_z_g * accel_z_g);
+        calib_sum_mag_ += magnitude;
+        calib_sum_mag_sq_ += magnitude * magnitude;
+        calib_sum_vertical_ += vertical_accel_m_s2;
         calib_count_++;
     }
 
-    accel_buf_ = raw_accel_axis;
+    accel_buf_ = vertical_accel_m_s2;
 
     const float y = baro_alt - (H[0]*x[0] + H[1]*x[1] + H[2]*x[2]);
     const float S = P[0][0] + R_scalar_;
@@ -84,8 +100,19 @@ void KalmanFilter::update(float baro_alt,
 bool KalmanFilter::is_calibrated() {
     if (calib_done_) return true;
     if (calib_count_ < MIN_CALIB_SAMPLES) return false;
-    float mean_mag = calib_sum_mag_ / calib_count_;
-    imu_scale_ = (mean_mag > 0.05f) ? (1.0f / mean_mag) : 1.0f;
+
+    const float count = static_cast<float>(calib_count_);
+    const float mean_mag = calib_sum_mag_ / count;
+    const float variance = fmaxf(0.0f, (calib_sum_mag_sq_ / count) - (mean_mag * mean_mag));
+    if (mean_mag < 0.7f || mean_mag > 1.3f || variance > 0.02f) {
+        calib_sum_mag_ = 0.0f;
+        calib_sum_mag_sq_ = 0.0f;
+        calib_sum_vertical_ = 0.0f;
+        calib_count_ = 0;
+        return false;
+    }
+
+    x[2] = calib_sum_vertical_ / count;
     calib_done_ = true;
     return true;
 }

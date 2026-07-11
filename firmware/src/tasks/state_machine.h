@@ -1,9 +1,11 @@
 #ifndef STATE_MACHINE_H
 #define STATE_MACHINE_H
 #include <data.h>
+#include "croi_mission_config.h"
 #include <IMU/IMU.h>
 #include <Baro/baro.h>
 #include "../tools/kalman_filter.h"
+#include "../tools/flight_phase_logic.h"
 #include <stdio.h>
 #include "cmsis_os.h"
 #if F4
@@ -22,54 +24,42 @@ class StateMachine {
     public:
         StateMachine(IMU *imu, Baro *baro, const flash_internal_data* settings, osMessageQueueId_t can_queue, osMessageQueueId_t logger_queue);
               
-        //should put this in data.h
-        enum State {
-            CALIBRATING,
-            READY,
-            POWERED,
-            COASTING,
-            DROUGE,
-            MAIN,
-            LANDED,
-        };
-        void run();
-        State current_state;
+        bool run();
+        State current_state{CALIBRATING};
 
     private:
         void StartStateMachine();
         static void StartStateMachineEntry(void *argument);
     
-        void update_state(const core_flight_data raw_data, prediction_data prediction);
+        void update_state(const prediction_data& prediction);
         void check_calibrating_state_done();
-        void check_ready_state_done(float accel);
-        void check_powered_state_done(float accel);
-        void check_coasting_state_done(float velocity);
-        void check_drouge_state_done(float height);
-        void check_main_state_done(float height);
         void change_state(State new_state);
+        static float vertical_acceleration_m_s2(const imu_data& imu);
         
         IMU *imu_;
         Baro *baro_;
 
-        //hard coded low limit values in case settings are not set
         int main_height{200};
-        int drouge_delay{0};
-        int liftoff_threshold{20};
-        KalmanFilter *kalman_filter_ = new KalmanFilter();
+        uint32_t drogue_delay_ms{0U};
+        float liftoff_threshold_m_s2{20.0f};
+        KalmanFilter kalman_filter_{};
+        FlightPhaseLogic phase_logic_;
+        uint32_t last_filter_update_ms_{0U};
         
 
         osMessageQueueId_t can_queue_;
         osMessageQueueId_t logger_queue_;
         osThreadId_t taskHandle_;
-        
+        StaticTask_t task_control_block_{};
+        StackType_t task_stack_[2048U / sizeof(StackType_t)]{};
 
         const osThreadAttr_t task_attributes {
             "FSM",
             0,
-            nullptr,
-            0,
-            nullptr,
-            2048 ,        // 2 KB stack
+            &task_control_block_,
+            sizeof(task_control_block_),
+            task_stack_,
+            sizeof(task_stack_),
             osPriorityHigh,
             0,
             0

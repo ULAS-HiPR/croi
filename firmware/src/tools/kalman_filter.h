@@ -4,9 +4,6 @@
 #include <cmath>
 #include <cstdint>
 
-#define IMU_VERTICAL_AXIS  1
-#define IMU_AXIS_SIGN      (-1.0f)
-
 class KalmanFilter {
 public:
     KalmanFilter();
@@ -14,9 +11,10 @@ public:
 
     void predict(float dt);
     void update(float baro_alt_agl,
-                float raw_accel_axis,
-                float raw_ax,
-                float raw_az);
+                float vertical_accel_m_s2,
+                float accel_x_g,
+                float accel_y_g,
+                float accel_z_g);
 
     void update_values(prediction_data* data) {
         data->altitude     = x[0];
@@ -50,8 +48,9 @@ private:
 
     static constexpr int   MIN_CALIB_SAMPLES  = 50;
     float    calib_sum_mag_ = 0.0f;
+    float    calib_sum_mag_sq_ = 0.0f;
+    float    calib_sum_vertical_ = 0.0f;
     int      calib_count_   = 0;
-    float    imu_scale_     = 1.0f;
     bool     calib_done_    = false;
 
     static constexpr uint32_t APOGEE_CONFIRM_MS = 300;

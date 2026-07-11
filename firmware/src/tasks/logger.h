@@ -39,6 +39,7 @@ struct LoggerHealth {
     volatile FlashLogStatus flash_status{FlashLogStatus::NotInitialized};
     volatile uint32_t run_id{0U};
     volatile uint32_t records_written{0U};
+    volatile uint32_t used_bytes{0U};
 };
 
 namespace task{
@@ -54,7 +55,7 @@ class Logger {
                 taskHandle_(nullptr)
         {};
 
-        void run();
+        bool run();
         const LoggerHealth* health() const { return health_; }
 
         struct LogMessage {
@@ -70,8 +71,10 @@ class Logger {
         bool log_flight_data(FlashLogger& flash_logger, const flight_data& data);
         bool log_secondary_data(FlashLogger& flash_logger,
                                 const secondary_flight_data& data);
+        void service_flash_mailbox();
         void latch_fault(LoggerFault fault, FlashLogStatus status);
         void update_health_ok(const FlashLogger& flash_logger);
+        void mirror_health_to_status() const;
         static bool preflight_state(State state);
         static LoggerFault map_flash_status(FlashLogStatus status);
         uint32_t endlog_time{0};
@@ -85,14 +88,16 @@ class Logger {
         LoggerHealth owned_health_{};
         LoggerHealth* health_;
         osThreadId_t taskHandle_;
+        StaticTask_t task_control_block_{};
+        StackType_t task_stack_[1024U / sizeof(StackType_t)]{};
 
         const osThreadAttr_t task_attributes {
             "Logger",
             0,
-            nullptr,
-            0,
-            nullptr,
-            1024,      
+            &task_control_block_,
+            sizeof(task_control_block_),
+            task_stack_,
+            sizeof(task_stack_),
             osPriorityLow,
             0,
             0

@@ -10,11 +10,15 @@
 #endif
 #include "platform/error_handler.h"
 #include "cmsis_os.h"
+#include <task.h>
 #include <data.h>
 
 #include "tasks/state_machine.h"
 #include "tasks/CAN_task.h"
 #include "tasks/logger.h"
+#include "tasks/watchdog_task.h"
+#include "croi_status.h"
+#include "croi_mission_config.h"
 
 //Generic henders
 #include <sensor.h>
@@ -38,25 +42,124 @@
 //#inlcude <IMU/ADXL347.h>
 //#include <Env/BME280.h>
 
+extern "C" {
+
+struct OgmaBoardIdentity {
+    uint32_t magic;
+    uint16_t schema_version;
+    uint16_t struct_size;
+    uint32_t board_id;
+    uint32_t capabilities;
+    uint32_t firmware_version;
+    uint32_t firmware_build;
+    uint32_t reserved0;
+    uint32_t reserved1;
+};
+
+__attribute__((used)) volatile OgmaBoardIdentity ogma_board_identity{
+    0x4F474944U,
+    1U,
+    sizeof(OgmaBoardIdentity),
+    0x01U,
+    0x03U,
+    20260710U,
+    0U,
+    0U,
+    0U,
+};
+
+__attribute__((used)) volatile CroiStatus croi_status{
+    CROI_STATUS_MAGIC,
+    CROI_STATUS_VERSION,
+};
+
+}
+
 
 void SystemClock_Config(void);
 void Error_Handler(void);
 
-const osMessageQueueAttr_t canRQueue_attributes = {
-  .name = "canReciverQueue"
+extern "C" void vApplicationMallocFailedHook(void)
+{
+    Error_Handler();
+}
+
+extern "C" void vApplicationStackOverflowHook(TaskHandle_t, char *)
+{
+    Error_Handler();
+}
+
+namespace {
+
+static_assert(CROI_MISSION_CONFIG_MAGIC == 0x4F474D43U,
+              "invalid Croí mission config magic");
+static_assert(CROI_MISSION_CONFIG_SCHEMA_VERSION == 3U,
+              "unsupported Croí mission config schema");
+static_assert(CROI_MISSION_LIFTOFF_ACCEL_M_S2_X100 >= 100U &&
+              CROI_MISSION_LIFTOFF_ACCEL_M_S2_X100 <= 20000U,
+              "liftoff threshold must be 1 to 200 m/s^2");
+static_assert(CROI_MISSION_MAIN_DEPLOY_ALTITUDE_M <= 20000U,
+              "main deployment altitude is out of range");
+static_assert(CROI_MISSION_DROGUE_DELAY_MS <= 600000U,
+              "drogue delay is out of range");
+static_assert(CROI_MISSION_IMU_VERTICAL_AXIS <= 2U,
+              "IMU vertical axis is out of range");
+static_assert(CROI_MISSION_IMU_VERTICAL_SIGN == -1 ||
+              CROI_MISSION_IMU_VERTICAL_SIGN == 1,
+              "IMU vertical sign must be -1 or 1");
+
+constexpr uint32_t CAN_RECEIVER_QUEUE_DEPTH = 4U;
+constexpr uint32_t CAN_SENDER_QUEUE_DEPTH = 4U;
+constexpr uint32_t LOGGER_QUEUE_DEPTH = 4U;
+
+StaticQueue_t can_receiver_queue_control_block{};
+alignas(uint32_t) uint8_t can_receiver_queue_storage[
+    CAN_RECEIVER_QUEUE_DEPTH * sizeof(secondary_flight_data)]{};
+const osMessageQueueAttr_t can_receiver_queue_attributes{
+    "canReceiverQueue",
+    0U,
+    &can_receiver_queue_control_block,
+    sizeof(can_receiver_queue_control_block),
+    can_receiver_queue_storage,
+    sizeof(can_receiver_queue_storage),
 };
 
-const osMessageQueueAttr_t canSQueue_attributes = {
-  .name = "canSenderQueue"
+StaticQueue_t can_sender_queue_control_block{};
+alignas(uint32_t) uint8_t can_sender_queue_storage[
+    CAN_SENDER_QUEUE_DEPTH * sizeof(flight_data)]{};
+const osMessageQueueAttr_t can_sender_queue_attributes{
+    "canSenderQueue",
+    0U,
+    &can_sender_queue_control_block,
+    sizeof(can_sender_queue_control_block),
+    can_sender_queue_storage,
+    sizeof(can_sender_queue_storage),
 };
 
-const osMessageQueueAttr_t loggingQueue_attributes = {
-  .name = "loggingQueue"
+StaticQueue_t logging_queue_control_block{};
+alignas(uint32_t) uint8_t logging_queue_storage[
+    LOGGER_QUEUE_DEPTH * sizeof(flight_data)]{};
+const osMessageQueueAttr_t logging_queue_attributes{
+    "loggingQueue",
+    0U,
+    &logging_queue_control_block,
+    sizeof(logging_queue_control_block),
+    logging_queue_storage,
+    sizeof(logging_queue_storage),
 };
+
+}
 
 
 int main(void)
   {
+    (void)ogma_board_identity.magic;
+    (void)croi_status.magic;
+    croi_status.reset_flags = RCC->CSR;
+    __HAL_RCC_CLEAR_RESET_FLAGS();
+    croi_status.mission_config_magic = CROI_MISSION_CONFIG_MAGIC;
+    croi_status.mission_config_schema_version = CROI_MISSION_CONFIG_SCHEMA_VERSION;
+    croi_status.mission_config_crc32 = CROI_MISSION_CONFIG_CRC32;
     HAL_Init();
     SystemClock_Config();
     
@@ -65,60 +168,84 @@ int main(void)
     MX_TIM3_Init();
     osKernelInitialize();
 
-    SPI_Handler* spi_handler_baro = new SPI_STM(&hspi1, BARO_CS_PORT, BARO_CS_PIN);
-    SPI_Handler* spi_handler_imu = new SPI_STM(&hspi1, IMU_CS_PORT, IMU_CS_PIN);
-    SPI_Handler* spi_handler_flash = new SPI_STM(&hspi1, FLASH_CS_PORT, FLASH_CS_PIN);
+    static SPI_STM spi_handler_baro(&hspi1, BARO_CS_PORT, BARO_CS_PIN);
+    static SPI_STM spi_handler_imu(&hspi1, IMU_CS_PORT, IMU_CS_PIN);
+    static SPI_STM spi_handler_flash(&hspi1, FLASH_CS_PORT, FLASH_CS_PIN);
+    static MX25L128 flash_memory(spi_handler_flash);
+    static LSM6DSO32 imu(spi_handler_imu);
+    static MS5607 baro(spi_handler_baro);
+    static Buzzer_STM buzzer(&htim3, TIM_CHANNEL_3);
+    static flash_internal_data settings{
+        .main_height_m = static_cast<int>(CROI_MISSION_MAIN_DEPLOY_ALTITUDE_M),
+        .drogue_delay_ms = CROI_MISSION_DROGUE_DELAY_MS,
+        .liftoff_accel_m_s2_x100 = CROI_MISSION_LIFTOFF_ACCEL_M_S2_X100,
+    };
 
     bool init_status = true;
-    Flash* flash_memory = new MX25L128(*spi_handler_flash);
-    
-    
-    IMU* imu = new LSM6DSO32(*spi_handler_imu);
-    Baro* baro = new MS5607(*spi_handler_baro);
-    Buzzer* buzzer = new Buzzer_STM(&htim3, TIM_CHANNEL_3);
+    buzzer.init();
+    buzzer.play_startup();
 
-    buzzer->init();
-    buzzer->play_startup();
-
-
-    init_status &= imu->init();
-    init_status &= baro->init();
+    const bool imu_ok = imu.init();
+    const bool baro_ok = baro.init();
+    croi_status.imu_init_ok = imu_ok ? 1U : 0U;
+    croi_status.baro_init_ok = baro_ok ? 1U : 0U;
+    init_status &= imu_ok;
+    init_status &= baro_ok;
+    croi_status.init_ok = init_status ? 1U : 0U;
+    if (!init_status) {
+        Error_Handler();
+    }
    
     printf("Init status: %s\n", init_status ? "OK" : "FAIL");
 
     static LoggerHealth logger_health;
 
-    // test settings -> should be put into flash in future
-    flash_internal_data* settings = new flash_internal_data{
-        .main_height = 200,
-        .drouge_delay = 0,
-        .liftoff_thresh = 20,
-    };
-
     #if F4
       static CAN_MOCK canbus;
+      croi_status.can_init_ok = 1U;
     #elif F0
       MX_CAN_Init();
       static CAN_STM canbus(&hcan);
-      if (!canbus.init()) {
+      const bool can_ok = canbus.init();
+      croi_status.can_init_ok = can_ok ? 1U : 0U;
+      if (!can_ok) {
          Error_Handler();
       }
     #endif
+    osMessageQueueId_t canReciverQueueHandle = osMessageQueueNew(
+        CAN_RECEIVER_QUEUE_DEPTH,
+        sizeof(secondary_flight_data),
+        &can_receiver_queue_attributes);
+    osMessageQueueId_t canSenderQueueHandle = osMessageQueueNew(
+        CAN_SENDER_QUEUE_DEPTH,
+        sizeof(flight_data),
+        &can_sender_queue_attributes);
+    osMessageQueueId_t loggingQueueHandle = osMessageQueueNew(
+        LOGGER_QUEUE_DEPTH,
+        sizeof(flight_data),
+        &logging_queue_attributes);
+    if (canReciverQueueHandle == nullptr || canSenderQueueHandle == nullptr ||
+        loggingQueueHandle == nullptr) {
+        Error_Handler();
+    }
 
-    osMessageQueueId_t canReciverQueueHandle = osMessageQueueNew(4, sizeof(secondary_flight_data), &canRQueue_attributes);
-    osMessageQueueId_t canSenderQueueHandle = osMessageQueueNew(4, sizeof(flight_data), &canSQueue_attributes);
-    osMessageQueueId_t loggingQueueHandle = osMessageQueueNew(4, sizeof(flight_data), &loggingQueue_attributes);
-
-    static task::StateMachine state_machine(imu, baro, settings, canSenderQueueHandle, loggingQueueHandle);
+    static task::StateMachine state_machine(&imu, &baro, &settings, canSenderQueueHandle, loggingQueueHandle);
     static task::CAN_task can_task(canbus, canSenderQueueHandle, canReciverQueueHandle, NODE_CROI);
-    static task::Logger logger(flash_memory, loggingQueueHandle, canReciverQueueHandle, &logger_health);
+    static task::Logger logger(&flash_memory, loggingQueueHandle, canReciverQueueHandle, &logger_health);
+    static task::WatchdogTask watchdog_task;
 
-    #ifndef READING
-    can_task.run();
-    state_machine.run();
-    logger.run();
+    #if defined(CROI_WIPE_FLASH_ON_BOOT)
+    if (!logger.run()) {
+      Error_Handler();
+    }
+    #elif !defined(READING)
+    if (!can_task.run() || !state_machine.run() || !logger.run() || !watchdog_task.run()) {
+      Error_Handler();
+    }
     #else
-    logger.run();
+    if (!logger.run()) {
+      Error_Handler();
+    }
     #endif
     //size_t freeHeap = xPortGetFreeHeapSize();
     //printf("Free heap size: %u bytes\n", freeHeap);

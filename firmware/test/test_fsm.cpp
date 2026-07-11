@@ -1,191 +1,127 @@
-#ifndef TEST_FSM_H
-#define TEST_FSM_H
 #include <unity.h>
-#include <vector>
-#include <fstream>
-#include <sstream>
-#include <stdexcept>
-#include <stdint.h>
-
-
-extern "C" void StartFSM(void* argument);
-
 #include <tools/kalman_filter.h>
-#include <tools/state_machine.h>
-#include <IMU/IMU.h>
-#include <Baro/baro.h>
-#include <data.h>
-#include <fsm.h>
+#include <tools/flight_phase_logic.h>
+#include <tools/airbrake_logic.h>
+#include <CAN/CAN_Frames.h>
+void test_kalman_requires_valid_sample_count_for_calibration() {
+    KalmanFilter filter;
+    TEST_ASSERT_FALSE(filter.is_calibrated());
 
+    for (int sample = 0; sample < 49; ++sample) {
+        filter.update(0.0f, 9.80665f, 0.0f, 1.0f, 0.0f);
+    }
+    TEST_ASSERT_FALSE(filter.is_calibrated());
 
-static uint32_t fake_time = 0;
-
-static std::function<void(uint32_t)> tick_callback;
-
-struct EndTest {};
-
-extern "C" {
-
-uint32_t HAL_GetTick() {
-    return fake_time;
+    filter.update(0.0f, 9.80665f, 0.0f, 1.0f, 0.0f);
+    TEST_ASSERT_TRUE(filter.is_calibrated());
 }
 
-void osDelay(uint32_t ms) {
-    fake_time += ms;
+void test_kalman_publishes_finite_prediction() {
+    KalmanFilter filter;
+    prediction_data prediction{};
 
-    if (tick_callback) {
-        tick_callback(fake_time);
+    for (int sample = 0; sample < 50; ++sample) {
+        filter.predict(0.1f);
+        filter.update(120.0f, 9.80665f, 0.0f, 1.0f, 0.0f);
     }
+    filter.update_values(&prediction);
 
-    // Stop after 122.219 seconds of simulated time
-    if (fake_time > 12221900) {
-        throw EndTest{};
-    }
+    TEST_ASSERT_TRUE(prediction.altitude > 0.0f);
+    TEST_ASSERT_TRUE(prediction.altitude < 200.0f);
 }
 
-void SystemClock_Config() {}
-void Error_Handler() {}
-
+void test_kalman_rejects_moving_calibration_window() {
+    KalmanFilter filter;
+    for (int sample = 0; sample < 50; ++sample) {
+        const float accel = (sample % 2 == 0) ? 0.2f : 1.8f;
+        filter.update(0.0f, accel * 9.80665f, 0.0f, accel, 0.0f);
+    }
+    TEST_ASSERT_FALSE(filter.is_calibrated());
 }
 
-class MockIMU : public IMU {
-public:
-    std::vector<imu_data> samples;
-    size_t idx = 0;
-
-    bool init() override { return true; }  // <--- added
-    bool update(imu_data* out) override {
-        if (idx >= samples.size()) return false;
-        *out = samples[idx++];
-        return true;
-    }
-};
-
-class MockBaro : public Baro {
-public:
-    std::vector<baro_data> samples;
-    size_t idx = 0;
-
-    bool init() override { return true; }  
-    bool update(baro_data* out) override {
-        if (idx >= samples.size()) return false;
-        *out = samples[idx++];
-        return true;
-    }
-};
-
-
-static void loadCSV(const char* path,
-                    MockIMU& imu,
-                    MockBaro& baro)
-{
-    std::ifstream file(path);
-    TEST_ASSERT_TRUE(file.is_open());
-
-    std::string line;
-
-    std::getline(file, line);
-
-std::vector<uint32_t> sample_times;
-
-while (std::getline(file, line)) {
-    std::stringstream ss(line);
-    std::string token;
-
-    float time_sec, altitude, velocity, accel_y;
-
-    std::getline(ss, token, ','); time_sec = std::stof(token);
-    std::getline(ss, token, ','); altitude = std::stof(token);
-    std::getline(ss, token, ','); velocity = std::stof(token);
-    std::getline(ss, token, ','); accel_y = std::stof(token);
-
-    imu_data imu_sample{};
-    imu_sample.acceleration.y = accel_y;
-
-    baro_data baro_sample{};
-    baro_sample.altitude = altitude;
-
-    imu.samples.push_back(imu_sample);
-    baro.samples.push_back(baro_sample);
-
-    sample_times.push_back(static_cast<uint32_t>(time_sec * 1000.0f));
-}
+void test_phase_logic_requires_consecutive_samples() {
+    FlightPhaseLogic logic(20.0f, 200.0f, 0U);
+    TEST_ASSERT_EQUAL(State::READY, logic.update(State::READY, 25.0f, 0.0f, 0.0f, 0U));
+    TEST_ASSERT_EQUAL(State::READY, logic.update(State::READY, 0.0f, 0.0f, 0.0f, 0U));
+    TEST_ASSERT_EQUAL(State::READY, logic.update(State::READY, 25.0f, 0.0f, 0.0f, 0U));
+    TEST_ASSERT_EQUAL(State::READY, logic.update(State::READY, 25.0f, 0.0f, 0.0f, 0U));
+    TEST_ASSERT_EQUAL(State::POWERED, logic.update(State::READY, 25.0f, 0.0f, 0.0f, 0U));
 }
 
-void test_FSM_CSV(void)
-{
-    MockIMU imu;
-    MockBaro baro;
-
-    printf("Loading CSV from path: test/data/EuRoC24.csv\n");
-    fflush(stdout);
-    loadCSV("test/data/EuRoC24.csv", imu, baro);
-
-    printf("Loaded %zu IMU samples and %zu Baro samples\n", imu.samples.size(), baro.samples.size());
-    fflush(stdout); 
-    KalmanFilter kalman;
-
-    flash_internal_data settings {
-        .main_height = 200,
-        .drouge_delay = 0,
-        .liftoff_thresh = 20
-    };
-
-    StateMachine sm(settings);
-
-    FSM_TaskArgs args;
-    args.imu = &imu;
-    args.baro = &baro;
-    args.kalman = &kalman;
-    args.state_machine = &sm;
-    args.settings = settings;
-
-    fake_time = 0;
-    struct Checkpoint { uint32_t time_ms; int expected_state; bool checked = false; };
-    // need to figure out mapping
-    std::vector<Checkpoint> checkpoints = {
-        {0, 1, false},
-        {56900, 2, false},
-        {636000, 4, false},
-        {11082000, 5, false},
-    };
-
-    tick_callback = [&](uint32_t time) {
-        for (auto& cp : checkpoints) {
-            if (!cp.checked && time >= cp.time_ms) {  
-                printf("[DEBUG] Time %u ms -> FSM state = %d (checkpoint %u ms)\n", time, sm.current_state, cp.time_ms);
-                fflush(stdout);
-            
-                cp.checked = true;  
-            
-                if (sm.current_state < cp.expected_state) {
-                    throw std::runtime_error(
-                        "FSM state failed at checkpoint " + std::to_string(cp.time_ms)
-                    );
-                }
-            }
-        }
-    };
-
-    try {
-        StartFSM(&args);   
-    }
-    catch (const EndTest&) {
-        
-    }
-    catch (const std::runtime_error& e) {
-        TEST_FAIL_MESSAGE(e.what());
-    }
-
-
-    TEST_ASSERT_TRUE(sm.current_state == 5); 
+void test_phase_logic_honors_drogue_delay_and_main_altitude() {
+    FlightPhaseLogic logic(20.0f, 200.0f, 1500U);
+    TEST_ASSERT_EQUAL(State::DROUGE, logic.update(State::DROUGE, 0.0f, -5.0f, 150.0f, 1499U));
+    TEST_ASSERT_EQUAL(State::DROUGE, logic.update(State::DROUGE, 0.0f, -5.0f, 150.0f, 1500U));
+    TEST_ASSERT_EQUAL(State::DROUGE, logic.update(State::DROUGE, 0.0f, -5.0f, 150.0f, 1600U));
+    TEST_ASSERT_EQUAL(State::MAIN, logic.update(State::DROUGE, 0.0f, -5.0f, 150.0f, 1700U));
 }
 
+void test_phase_logic_requires_five_seconds_of_landed_samples() {
+    FlightPhaseLogic logic(20.0f, 200.0f, 0U);
+    for (int sample = 0; sample < 49; ++sample) {
+        TEST_ASSERT_EQUAL(State::MAIN, logic.update(State::MAIN, 0.0f, 0.5f, 0.0f, 0U));
+    }
+    TEST_ASSERT_EQUAL(State::LANDED, logic.update(State::MAIN, 0.0f, 0.5f, 0.0f, 0U));
+}
 
-int main(void) {
+void test_airbrake_logic_is_fail_closed_when_disabled() {
+    AirbrakeLogic logic(false, 2U, 5U, 80U, 0U, 1000U);
+    const AirbrakeCommand command = logic.update(State::COASTING, 1000U);
+    TEST_ASSERT_FALSE(command.active);
+    TEST_ASSERT_EQUAL_UINT8(5U, command.angle_deg);
+}
+
+void test_airbrake_logic_renews_retracted_then_deploys() {
+    AirbrakeLogic logic(true, 2U, 5U, 80U, 1500U, 2500U);
+    AirbrakeCommand command = logic.update(State::READY, 900U);
+    TEST_ASSERT_TRUE(command.active);
+    TEST_ASSERT_EQUAL_UINT8(5U, command.angle_deg);
+
+    command = logic.update(State::POWERED, 1000U);
+    TEST_ASSERT_TRUE(command.active);
+    TEST_ASSERT_EQUAL_UINT8(5U, command.angle_deg);
+    command = logic.update(State::POWERED, 2499U);
+    TEST_ASSERT_EQUAL_UINT8(5U, command.angle_deg);
+    command = logic.update(State::COASTING, 2500U);
+    TEST_ASSERT_EQUAL_UINT8(80U, command.angle_deg);
+    command = logic.update(State::COASTING, 3499U);
+    TEST_ASSERT_EQUAL_UINT8(80U, command.angle_deg);
+    command = logic.update(State::COASTING, 3500U);
+    TEST_ASSERT_TRUE(command.active);
+    TEST_ASSERT_EQUAL_UINT8(5U, command.angle_deg);
+    command = logic.update(State::DROUGE, 4000U);
+    TEST_ASSERT_FALSE(command.active);
+    TEST_ASSERT_EQUAL_UINT8(5U, command.angle_deg);
+}
+
+void test_pyro_command_tag_binds_every_field() {
+    const uint16_t base = pyro_command_tag(PYRO_COMMAND_FIRE_DROGUE, 1U, 42U, 0x1234U);
+    TEST_ASSERT_NOT_EQUAL(base, pyro_command_tag(PYRO_COMMAND_ARM, 1U, 42U, 0x1234U));
+    TEST_ASSERT_NOT_EQUAL(base, pyro_command_tag(PYRO_COMMAND_FIRE_DROGUE, 2U, 42U, 0x1234U));
+    TEST_ASSERT_NOT_EQUAL(base, pyro_command_tag(PYRO_COMMAND_FIRE_DROGUE, 1U, 43U, 0x1234U));
+    TEST_ASSERT_NOT_EQUAL(base, pyro_command_tag(PYRO_COMMAND_FIRE_DROGUE, 1U, 42U, 0x1235U));
+    TEST_ASSERT_NOT_EQUAL(base, pyro_command_tag(PYRO_COMMAND_FIRE_MAIN, 1U, 42U, 0x1234U));
+}
+
+void test_pyro_sequence_freshness_handles_wrap() {
+    TEST_ASSERT_TRUE(pyro_sequence_newer(11U, 10U));
+    TEST_ASSERT_FALSE(pyro_sequence_newer(10U, 10U));
+    TEST_ASSERT_FALSE(pyro_sequence_newer(9U, 10U));
+    TEST_ASSERT_TRUE(pyro_sequence_newer(1U, 0xFFFFU));
+    TEST_ASSERT_FALSE(pyro_sequence_newer(0U, 0xFFFFU));
+}
+
+int main() {
     UNITY_BEGIN();
-    RUN_TEST(test_FSM_CSV);
+    RUN_TEST(test_kalman_requires_valid_sample_count_for_calibration);
+    RUN_TEST(test_kalman_publishes_finite_prediction);
+    RUN_TEST(test_kalman_rejects_moving_calibration_window);
+    RUN_TEST(test_phase_logic_requires_consecutive_samples);
+    RUN_TEST(test_phase_logic_honors_drogue_delay_and_main_altitude);
+    RUN_TEST(test_phase_logic_requires_five_seconds_of_landed_samples);
+    RUN_TEST(test_airbrake_logic_is_fail_closed_when_disabled);
+    RUN_TEST(test_airbrake_logic_renews_retracted_then_deploys);
+    RUN_TEST(test_pyro_command_tag_binds_every_field);
+    RUN_TEST(test_pyro_sequence_freshness_handles_wrap);
     return UNITY_END();
 }
-
-#endif // TEST_FSM_H
