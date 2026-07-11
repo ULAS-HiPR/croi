@@ -5,8 +5,9 @@ namespace task {
 
 namespace {
 
-constexpr uint16_t kMissionTag =
+constexpr uint16_t kMissionTagRaw =
     static_cast<uint16_t>(CROI_MISSION_CONFIG_CRC32 & 0xFFFFU);
+constexpr uint16_t kMissionTag = kMissionTagRaw == 0U ? 0xFFFFU : kMissionTagRaw;
 
 constexpr uint8_t configured_pyro_mask() {
     uint8_t mask = 0U;
@@ -585,6 +586,9 @@ bool CAN_task::send_frame(CAN_Frame& frame) {
 }
 
 bool CAN_task::send_critical_frame(CAN_Frame& frame) {
+    if (critical_tx_count_ != 0U) {
+        return queue_critical_frame(frame);
+    }
     if (canbus_.send(&frame)) {
         return true;
     }

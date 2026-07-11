@@ -72,7 +72,7 @@ No UART is required for host readout.
 - Drogue command is issued after Croi enters `DROGUE` and Pleasc reports the channel armed.
 - Main command is issued after Croi enters `MAIN` and Pleasc reports the channel armed.
 - `CROI_MISSION_DROGUE_DELAY_MS` is the minimum time spent in `DROGUE` before main transition; Ogma Console labels it accordingly.
-- Pyro commands use a mission tag, rolling sequence, command tag, critical TX queue, ACK/status feedback, and flash event logging.
+- Pyro commands use a mission tag, rolling sequence, command tag, critical TX queue, bounded retry until fired confirmation, ACK/status feedback, and flash event logging.
 - External RBF remains mandatory for Rev1.
 
 ## Mission Manifest

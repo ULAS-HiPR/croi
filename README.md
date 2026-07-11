@@ -59,7 +59,7 @@ Ogma Console can:
 - Flash reads require a short SWD bench lease and are rejected while flight states are active.
 - Sensor initialization failure halts the MCU. The FSM cannot leave calibration until IMU, barometer, CAN, and logger preflight are healthy.
 - Croi emits leased airbrake commands to Lamh from the mission manifest. Deployment and stow are independently timed from entry to `POWERED`; the default manifest keeps airbrakes disabled.
-- Croi emits mission-bound, sequenced Pleasc arm/fire commands only in active flight states. Drogue fires on entry to `DROGUE`; main fires on entry to `MAIN` after the configured altitude and minimum delay conditions.
+- Croi emits mission-bound, sequenced Pleasc arm/fire commands only in active flight states. Drogue fires on entry to `DROGUE`; main fires on entry to `MAIN` after the configured altitude and minimum delay conditions. Fire commands retry at a bounded rate until Pleasc confirms the channel fired.
 - Pleasc status/acknowledgements are logged into version-2 secondary flash records, including mission tag, sequence, channel, result, fault, continuity, and fired masks.
 - Croi mission config is compiled into the flight image and reported back with magic/schema/CRC over `croi_status`.
 - Hardware watchdog supervision is enabled after FSM, CAN, and logger tasks all report healthy progress.
