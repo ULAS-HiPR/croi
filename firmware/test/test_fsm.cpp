@@ -48,6 +48,15 @@ void test_phase_logic_requires_consecutive_samples() {
     TEST_ASSERT_EQUAL(State::POWERED, logic.update(State::READY, 25.0f, 0.0f, 0.0f, 0U));
 }
 
+void test_phase_logic_rejects_wrong_direction_liftoff_shock() {
+    FlightPhaseLogic logic(20.0f, 200.0f, 0U);
+    for (int sample = 0; sample < 10; ++sample) {
+        TEST_ASSERT_EQUAL(
+            State::READY,
+            logic.update(State::READY, -25.0f, 0.0f, 0.0f, 0U));
+    }
+}
+
 void test_phase_logic_honors_drogue_delay_and_main_altitude() {
     FlightPhaseLogic logic(20.0f, 200.0f, 1500U);
     TEST_ASSERT_EQUAL(State::DROUGE, logic.update(State::DROUGE, 0.0f, -5.0f, 150.0f, 1499U));
@@ -117,6 +126,7 @@ int main() {
     RUN_TEST(test_kalman_publishes_finite_prediction);
     RUN_TEST(test_kalman_rejects_moving_calibration_window);
     RUN_TEST(test_phase_logic_requires_consecutive_samples);
+    RUN_TEST(test_phase_logic_rejects_wrong_direction_liftoff_shock);
     RUN_TEST(test_phase_logic_honors_drogue_delay_and_main_altitude);
     RUN_TEST(test_phase_logic_requires_five_seconds_of_landed_samples);
     RUN_TEST(test_airbrake_logic_is_fail_closed_when_disabled);

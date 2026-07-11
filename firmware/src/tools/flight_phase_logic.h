@@ -30,7 +30,7 @@ public:
 
         switch (state) {
             case State::READY:
-                condition = std::fabs(acceleration_m_s2) > liftoff_threshold_m_s2_;
+                condition = acceleration_m_s2 > liftoff_threshold_m_s2_;
                 break;
             case State::POWERED:
                 condition = acceleration_m_s2 < 0.0f;

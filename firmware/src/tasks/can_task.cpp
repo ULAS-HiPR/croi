@@ -206,11 +206,13 @@ void CAN_task::service_pyro_commands(uint32_t now_ms,
     constexpr uint8_t drogue_channel = CROI_MISSION_PYRO_DROGUE_CHANNEL;
     constexpr uint8_t drogue_bit = static_cast<uint8_t>(1U << drogue_channel);
     if (flight_state_ == static_cast<uint8_t>(State::DROUGE) &&
-        !drogue_fire_commanded_ &&
+        (pyro_fired_mask_ & drogue_bit) == 0U &&
         (pyro_armed_mask_ & drogue_bit) != 0U &&
         (now_ms - pyro_state_entry_ms_) >= CAN_PYRO_FIRE_SETTLE_MS &&
-        send_pyro_fire(drogue_channel, now_ms, shared_data)) {
-        drogue_fire_commanded_ = true;
+        (last_drogue_fire_attempt_ms_ == 0U ||
+         (now_ms - last_drogue_fire_attempt_ms_) >= CAN_PYRO_FIRE_RETRY_MS)) {
+        last_drogue_fire_attempt_ms_ = now_ms;
+        (void)send_pyro_fire(drogue_channel, now_ms, shared_data);
     }
 #endif
 
@@ -218,11 +220,13 @@ void CAN_task::service_pyro_commands(uint32_t now_ms,
     constexpr uint8_t main_channel = CROI_MISSION_PYRO_MAIN_CHANNEL;
     constexpr uint8_t main_bit = static_cast<uint8_t>(1U << main_channel);
     if (flight_state_ == static_cast<uint8_t>(State::MAIN) &&
-        !main_fire_commanded_ &&
+        (pyro_fired_mask_ & main_bit) == 0U &&
         (pyro_armed_mask_ & main_bit) != 0U &&
         (now_ms - pyro_state_entry_ms_) >= CAN_PYRO_FIRE_SETTLE_MS &&
-        send_pyro_fire(main_channel, now_ms, shared_data)) {
-        main_fire_commanded_ = true;
+        (last_main_fire_attempt_ms_ == 0U ||
+         (now_ms - last_main_fire_attempt_ms_) >= CAN_PYRO_FIRE_RETRY_MS)) {
+        last_main_fire_attempt_ms_ = now_ms;
+        (void)send_pyro_fire(main_channel, now_ms, shared_data);
     }
 #endif
 }
@@ -343,6 +347,12 @@ bool CAN_task::process_rx_frame(const CAN_Frame& frame, secondary_flight_data& s
                 croi_status.pyro_last_channel = payload.channel;
                 croi_status.pyro_last_result = payload.result;
                 croi_status.pyro_last_fault = payload.fault_code;
+                if (payload.channel < 4U &&
+                    payload.result == static_cast<uint8_t>(PyroResult::FIRED) &&
+                    pyro_is_fire_command(payload.command)) {
+                    pyro_fired_mask_ |= static_cast<uint8_t>(1U << payload.channel);
+                    croi_status.pyro_fired_mask = pyro_fired_mask_;
+                }
                 log_pyro_event(shared_data, HAL_GetTick(), PyroEventAction::Acknowledgement,
                                payload.channel, payload.sequence,
                                payload.result, payload.fault_code);

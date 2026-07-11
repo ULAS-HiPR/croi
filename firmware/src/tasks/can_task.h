@@ -29,6 +29,7 @@
 #define CAN_ACTUATOR_COMMAND_PERIOD_MS 100U
 #define CAN_PYRO_ARM_PERIOD_MS 500U
 #define CAN_PYRO_FIRE_SETTLE_MS 250U
+#define CAN_PYRO_FIRE_RETRY_MS 250U
 #define CAN_CRITICAL_TX_QUEUE_LEN 4U
 
 namespace task{
@@ -106,8 +107,8 @@ class CAN_task {
         uint8_t pyro_armed_mask_{0U};
         uint8_t pyro_continuity_mask_{0U};
         uint8_t pyro_fired_mask_{0U};
-        bool drogue_fire_commanded_{false};
-        bool main_fire_commanded_{false};
+        uint32_t last_drogue_fire_attempt_ms_{0U};
+        uint32_t last_main_fire_attempt_ms_{0U};
 
         CAN_Frame critical_tx_queue_[CAN_CRITICAL_TX_QUEUE_LEN]{};
         uint8_t critical_tx_head_{0U};

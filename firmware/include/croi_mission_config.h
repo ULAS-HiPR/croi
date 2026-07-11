@@ -44,5 +44,8 @@
 #if CROI_MISSION_PYRO_DROGUE_CHANNEL > 3 || CROI_MISSION_PYRO_MAIN_CHANNEL > 3
 #error "invalid pyro channel"
 #endif
+#if CROI_MISSION_PYRO_DROGUE_CHANNEL >= 0 && CROI_MISSION_PYRO_DROGUE_CHANNEL == CROI_MISSION_PYRO_MAIN_CHANNEL
+#error "drogue and main cannot use the same pyro channel"
+#endif
 
 #endif
