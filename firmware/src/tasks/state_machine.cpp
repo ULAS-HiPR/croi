@@ -118,7 +118,9 @@ void StateMachine::StartStateMachine() {
         if (osMessageQueuePut(can_queue_, &snapshot_can, 0, 0) != osOK) {
             ++croi_status.can_queue_drops;
         }
-        if (osMessageQueuePut(logger_queue_, &snapshot_logger, 0, 0) != osOK) {
+        if (croi_status.flash_init_ok == 0U) {
+            ++croi_status.logger_startup_samples_skipped;
+        } else if (osMessageQueuePut(logger_queue_, &snapshot_logger, 0, 0) != osOK) {
             ++croi_status.logger_queue_drops;
         }
         //printf("data %d %f %f %f %d\n", time, raw_data.prediction.altitude, raw_data.prediction.velocity, raw_data.prediction.acceleration, current_state);

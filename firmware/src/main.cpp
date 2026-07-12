@@ -183,7 +183,6 @@ int main(void)
 
     bool init_status = true;
     buzzer.init();
-    buzzer.play_startup();
 
     const bool imu_ok = imu.init();
     const bool baro_ok = baro.init();

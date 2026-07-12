@@ -89,7 +89,7 @@ class Logger {
         LoggerHealth* health_;
         osThreadId_t taskHandle_;
         StaticTask_t task_control_block_{};
-        StackType_t task_stack_[1024U / sizeof(StackType_t)]{};
+        StackType_t task_stack_[1536U / sizeof(StackType_t)]{};
 
         const osThreadAttr_t task_attributes {
             "Logger",

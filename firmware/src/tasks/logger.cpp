@@ -207,6 +207,7 @@ void Logger::StartLogger() {
         LOGGER_FLASH_LENGTH);
     config.max_payload_size = max_payload_size();
     config.verify_writes = true;
+    config.verify_existing_payloads_on_begin = false;
 
     // begin() (not begin(config, run_id)) just scans and adopts the existing
     // log so we can read whatever's already on the chip without rolling the
@@ -416,6 +417,7 @@ bool Logger::configure_logger(FlashLogger& flash_logger) {
         LOGGER_FLASH_LENGTH);
     config.max_payload_size = max_payload_size();
     config.verify_writes = true;
+    config.verify_existing_payloads_on_begin = false;
 
 #if defined(CROI_WIPE_FLASH_ON_BOOT)
     constexpr uint32_t kWipeChunkBytes = 0x00010000U;
