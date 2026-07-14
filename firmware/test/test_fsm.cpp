@@ -2,6 +2,8 @@
 #include <tools/kalman_filter.h>
 #include <tools/flight_phase_logic.h>
 #include <tools/airbrake_logic.h>
+#include <tools/logging_window.h>
+#include <tools/logging_capacity.h>
 #include <CAN/CAN_Frames.h>
 void test_kalman_requires_valid_sample_count_for_calibration() {
     KalmanFilter filter;
@@ -149,6 +151,41 @@ void test_airbrake_logic_renews_retracted_then_deploys() {
     TEST_ASSERT_EQUAL_UINT8(5U, command.angle_deg);
 }
 
+void test_logging_window_does_not_consume_flash_before_liftoff() {
+    LoggingWindow window(60000U);
+    TEST_ASSERT_FALSE(window.active(State::CALIBRATING, 0U));
+    TEST_ASSERT_FALSE(window.active(State::READY, 3600000U));
+    TEST_ASSERT_FALSE(window.active(State::LANDED, 3600100U));
+}
+
+void test_logging_window_covers_flight_and_post_landing_period() {
+    LoggingWindow window(60000U);
+    TEST_ASSERT_TRUE(window.active(State::POWERED, 1000U));
+    TEST_ASSERT_TRUE(window.active(State::COASTING, 2000U));
+    TEST_ASSERT_TRUE(window.active(State::DROUGE, 3000U));
+    TEST_ASSERT_TRUE(window.active(State::MAIN, 4000U));
+    TEST_ASSERT_TRUE(window.active(State::LANDED, 5000U));
+    TEST_ASSERT_TRUE(window.active(State::LANDED, 65000U));
+    TEST_ASSERT_FALSE(window.active(State::LANDED, 65001U));
+}
+
+void test_logging_window_post_landing_timer_handles_tick_wrap() {
+    LoggingWindow window(100U);
+    TEST_ASSERT_TRUE(window.active(State::POWERED, 0xFFFFFF00U));
+    TEST_ASSERT_TRUE(window.active(State::LANDED, 0xFFFFFFF0U));
+    TEST_ASSERT_TRUE(window.active(State::LANDED, 0x00000054U));
+    TEST_ASSERT_FALSE(window.active(State::LANDED, 0x00000055U));
+}
+
+void test_logging_capacity_budgets_flight_and_remote_records() {
+    TEST_ASSERT_EQUAL_UINT64(
+        2570400U,
+        logging_capacity_bytes(100U, 1200000U, 60000U, 100U, 104U, true));
+    TEST_ASSERT_EQUAL_UINT64(
+        1260000U,
+        logging_capacity_bytes(100U, 1200000U, 60000U, 100U, 104U, false));
+}
+
 void test_pyro_command_tag_binds_every_field() {
     const uint16_t base = pyro_command_tag(PYRO_COMMAND_FIRE_DROGUE, 1U, 42U, 0x1234U);
     TEST_ASSERT_NOT_EQUAL(base, pyro_command_tag(PYRO_COMMAND_ARM, 1U, 42U, 0x1234U));
@@ -179,6 +216,10 @@ int main() {
     RUN_TEST(test_phase_logic_requires_five_seconds_of_landed_samples);
     RUN_TEST(test_airbrake_logic_is_fail_closed_when_disabled);
     RUN_TEST(test_airbrake_logic_renews_retracted_then_deploys);
+    RUN_TEST(test_logging_window_does_not_consume_flash_before_liftoff);
+    RUN_TEST(test_logging_window_covers_flight_and_post_landing_period);
+    RUN_TEST(test_logging_window_post_landing_timer_handles_tick_wrap);
+    RUN_TEST(test_logging_capacity_budgets_flight_and_remote_records);
     RUN_TEST(test_pyro_command_tag_binds_every_field);
     RUN_TEST(test_pyro_sequence_freshness_handles_wrap);
     return UNITY_END();

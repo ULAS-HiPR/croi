@@ -62,7 +62,8 @@ Ogma Console can:
 - Croi emits mission-bound, sequenced Pleasc arm/fire commands only in active flight states. Drogue fires on entry to `DROGUE`; main fires on entry to `MAIN` after the configured altitude and minimum delay conditions. Fire commands retry at a bounded rate until Pleasc confirms the channel fired.
 - Pleasc status/acknowledgements are logged into version-2 secondary flash records, including mission tag, sequence, channel, result, fault, continuity, and fired masks.
 - Croi mission config is compiled into the flight image and reported back with magic/schema/CRC over `croi_status`.
-- Mission schema 5 seals the recovery fallback and blackbox policy into that CRC. The guarded main fallback requires elapsed time after apogee, descent speed, an altitude window, and consecutive samples.
+- Mission schema 6 seals recovery and blackbox policy into that CRC. Persistent logging starts at `POWERED`, continues through flight and the configured post-landing window, and never consumes flash while waiting in `CALIBRATING` or `READY`.
+- Croi calculates worst-case storage for the configured minimum flight window. Insufficient capacity blocks `READY`; free and required bytes remain visible over SWD, and the read mailbox remains available for recovery.
 - Ogma Console replay compiles and executes the same `FlightPhaseLogic` and `AirbrakeLogic` headers used by this image.
 - Hardware watchdog supervision is enabled after FSM, CAN, and logger tasks all report healthy progress.
 - Pyro configuration is available in Ogma Console. Live firing still requires the explicit Pleasc Rev1 accepted-risk image and an external RBF/pyro-power disconnect.

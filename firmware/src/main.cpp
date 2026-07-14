@@ -93,7 +93,7 @@ namespace {
 
 static_assert(CROI_MISSION_CONFIG_MAGIC == 0x4F474D43U,
               "invalid Croí mission config magic");
-static_assert(CROI_MISSION_CONFIG_SCHEMA_VERSION == 5U,
+static_assert(CROI_MISSION_CONFIG_SCHEMA_VERSION == 6U,
               "unsupported Croí mission config schema");
 static_assert(CROI_MISSION_LIFTOFF_ACCEL_M_S2_X100 >= 100U &&
               CROI_MISSION_LIFTOFF_ACCEL_M_S2_X100 <= 20000U,

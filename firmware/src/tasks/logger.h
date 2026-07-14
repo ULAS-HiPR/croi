@@ -11,6 +11,7 @@
 #include <croi_mission_config.h>
 #include <Flash/FlashLogger.h>
 #include <Flash/flash.h>
+#include <tools/logging_window.h>
 
 #define LOGGER_DELAY_MS CROI_LOGGING_FLIGHT_SAMPLE_PERIOD_MS
 #define LOGGER_POST_LANDING_MS CROI_LOGGING_POST_LANDING_MS
@@ -41,6 +42,8 @@ struct LoggerHealth {
     volatile uint32_t run_id{0U};
     volatile uint32_t records_written{0U};
     volatile uint32_t used_bytes{0U};
+    volatile uint32_t free_bytes{0U};
+    volatile uint32_t required_bytes{0U};
 };
 
 namespace task{
@@ -78,9 +81,7 @@ class Logger {
         void mirror_health_to_status() const;
         static bool preflight_state(State state);
         static LoggerFault map_flash_status(FlashLogStatus status);
-        uint32_t endlog_time{0};
-        bool logging_stop_timer{true};
-        bool is_logger_active(State state, uint32_t time);
+        LoggingWindow logging_window_{LOGGER_POST_LANDING_MS};
        
 
         Flash* storage_;

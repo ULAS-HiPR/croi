@@ -1,6 +1,7 @@
 #include "logger.h"
 #include "croi_status.h"
 #include "platform/hal_time.h"
+#include "tools/logging_capacity.h"
 
 extern "C" {
 
@@ -59,6 +60,27 @@ constexpr uint32_t OGMA_DEBUG_CONTROL_VERSION = 1U;
 constexpr uint32_t OGMA_DEBUG_UNLOCK_KEY = 0x0BEE11E5U;
 constexpr uint32_t OGMA_DEBUG_MIN_LEASE_MS = 1000U;
 constexpr uint32_t OGMA_DEBUG_MAX_LEASE_MS = 60000U;
+
+constexpr uint32_t align_record_size(uint32_t value) {
+    return (value + 3U) & ~3U;
+}
+
+constexpr uint32_t kFlightRecordBytes =
+    align_record_size(sizeof(FlashLogRecordHeader) + sizeof(flight_data));
+constexpr uint32_t kRemoteRecordBytes =
+    align_record_size(sizeof(FlashLogRecordHeader) + sizeof(secondary_flight_data));
+constexpr uint64_t kRequiredLogBytes = logging_capacity_bytes(
+    CROI_LOGGING_FLIGHT_SAMPLE_PERIOD_MS,
+    CROI_LOGGING_MINIMUM_FLIGHT_MS,
+    CROI_LOGGING_POST_LANDING_MS,
+    kFlightRecordBytes,
+    kRemoteRecordBytes,
+    CROI_LOGGING_INCLUDE_REMOTE_CAN != 0U);
+
+static_assert(sizeof(FlashLogRecordHeader) == 40U, "flash record header contract changed");
+static_assert(sizeof(flight_data) == 60U, "flight log payload contract changed");
+static_assert(kRequiredLogBytes <= LOGGER_FLASH_LENGTH,
+              "configured mission log window exceeds flash capacity");
 
 bool tick_after(uint32_t a, uint32_t b) {
     return static_cast<int32_t>(a - b) > 0;
@@ -227,6 +249,8 @@ void Logger::StartLogger() {
         health_->run_id = info.run_id;
         health_->records_written = info.record_count;
         health_->used_bytes = info.used_bytes;
+        health_->free_bytes = info.end_address - info.next_address;
+        health_->required_bytes = static_cast<uint32_t>(kRequiredLogBytes);
         mirror_health_to_status();
     }
     printf("LOG INFO: records=%lu run_id=%lu highest_run_id=%lu used=%lu/%lu\n",
@@ -283,6 +307,8 @@ void Logger::StartLogger() {
         health_->run_id = 0U;
         health_->records_written = 0U;
         health_->used_bytes = 0U;
+        health_->free_bytes = 0U;
+        health_->required_bytes = static_cast<uint32_t>(kRequiredLogBytes);
         mirror_health_to_status();
     }
 
@@ -306,6 +332,7 @@ void Logger::StartLogger() {
         secondary_flight_data ignored_secondary{};
         for (;;) {
             croi_status.logger_task_heartbeat_ms = HAL_GetTick();
+            service_flash_mailbox();
             (void)osMessageQueueGet(logger_queue_, &ignored, 0, 0U);
             (void)osMessageQueueGet(reciver_queue_, &ignored_secondary, 0, 0U);
             osDelay(LOGGER_DELAY_MS);
@@ -320,14 +347,17 @@ void Logger::StartLogger() {
         service_flash_mailbox();
 
         if (osMessageQueueGet(logger_queue_, &data, 0, 0U) == osOK) {
-            if (is_logger_active(static_cast<State>(data.state), data.time)) {
+            if (logging_window_.active(static_cast<State>(data.state), data.time)) {
                 (void)log_flight_data(flash_logger, data);
             }
         }
 
         if (osMessageQueueGet(reciver_queue_, &secondary_data, 0, 0U) == osOK) {
 #if CROI_LOGGING_INCLUDE_REMOTE_CAN
-            (void)log_secondary_data(flash_logger, secondary_data);
+            if (logging_window_.active(
+                    static_cast<State>(croi_status.flight_state), HAL_GetTick())) {
+                (void)log_secondary_data(flash_logger, secondary_data);
+            }
 #endif
         }
 
@@ -454,7 +484,33 @@ bool Logger::configure_logger(FlashLogger& flash_logger) {
     return true;
 #else
     if (!flash_logger.begin(config)) {
+        const FlashLogInfo info = flash_logger.info();
+        if (health_ != nullptr) {
+            health_->initialized = info.initialized;
+            health_->preflight_ok = false;
+            health_->run_id = info.run_id != 0U ? info.run_id : info.highest_run_id;
+            health_->records_written = info.record_count;
+            health_->used_bytes = info.used_bytes;
+            health_->free_bytes = info.end_address - info.next_address;
+            health_->required_bytes = static_cast<uint32_t>(kRequiredLogBytes);
+        }
         latch_fault(map_flash_status(flash_logger.status()), flash_logger.status());
+        return false;
+    }
+
+    const FlashLogInfo info = flash_logger.info();
+    const uint32_t free_bytes = info.end_address - info.next_address;
+    if (health_ != nullptr) {
+        health_->initialized = info.initialized;
+        health_->preflight_ok = false;
+        health_->run_id = info.run_id;
+        health_->records_written = info.record_count;
+        health_->used_bytes = info.used_bytes;
+        health_->free_bytes = free_bytes;
+        health_->required_bytes = static_cast<uint32_t>(kRequiredLogBytes);
+    }
+    if (free_bytes < kRequiredLogBytes) {
+        latch_fault(LoggerFault::Full, FlashLogStatus::Full);
         return false;
     }
 
@@ -486,6 +542,8 @@ bool Logger::log_flight_data(FlashLogger& flash_logger, const flight_data& data)
         health_->records_written = info.record_count;
         health_->run_id = info.run_id;
         health_->used_bytes = info.used_bytes;
+        health_->free_bytes = info.end_address - info.next_address;
+        health_->required_bytes = static_cast<uint32_t>(kRequiredLogBytes);
         mirror_health_to_status();
     }
 
@@ -515,6 +573,8 @@ bool Logger::log_secondary_data(FlashLogger& flash_logger,
         health_->records_written = info.record_count;
         health_->run_id = info.run_id;
         health_->used_bytes = info.used_bytes;
+        health_->free_bytes = info.end_address - info.next_address;
+        health_->required_bytes = static_cast<uint32_t>(kRequiredLogBytes);
         mirror_health_to_status();
     }
 
@@ -548,6 +608,8 @@ void Logger::update_health_ok(const FlashLogger& flash_logger) {
     health_->run_id = info.run_id;
     health_->records_written = info.record_count;
     health_->used_bytes = info.used_bytes;
+    health_->free_bytes = info.end_address - info.next_address;
+    health_->required_bytes = static_cast<uint32_t>(kRequiredLogBytes);
     mirror_health_to_status();
 }
 
@@ -564,6 +626,8 @@ void Logger::mirror_health_to_status() const {
     croi_status.logger_run_id = health_->run_id;
     croi_status.logger_records_written = health_->records_written;
     croi_status.logger_used_bytes = health_->used_bytes;
+    croi_status.logger_free_bytes = health_->free_bytes;
+    croi_status.logger_required_bytes = health_->required_bytes;
     croi_status.logger_stack_free_bytes =
         osThreadGetStackSpace(taskHandle_) * sizeof(StackType_t);
 }
@@ -597,17 +661,4 @@ LoggerFault Logger::map_flash_status(FlashLogStatus status) {
 }
 
 
-bool Logger::is_logger_active(State state, uint32_t time) {
-    if (logging_stop_timer && (state == State::LANDED)) {
-        logging_stop_timer = false;
-        endlog_time = time;
-
-        return true;
-    }
-    if (!logging_stop_timer && (time - endlog_time) > LOGGER_POST_LANDING_MS) {
-        return false; // Stop logging after 1 minute on the ground
-    }else{
-        return true; // Continue logging
-    }
-}
 }
