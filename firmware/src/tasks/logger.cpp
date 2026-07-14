@@ -326,7 +326,9 @@ void Logger::StartLogger() {
         }
 
         if (osMessageQueueGet(reciver_queue_, &secondary_data, 0, 0U) == osOK) {
+#if CROI_LOGGING_INCLUDE_REMOTE_CAN
             (void)log_secondary_data(flash_logger, secondary_data);
+#endif
         }
 
         osDelay(LOGGER_DELAY_MS);

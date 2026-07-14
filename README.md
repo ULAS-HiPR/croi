@@ -18,7 +18,7 @@ Current hardware and firmware indicate:
 - IMU: LSM6DSO32.
 - Barometer: MS5607.
 - Extra sensors on hardware: BME680 and ADXL375 are present in the schematic.
-- Storage: W25Q128-class 16 MB SPI flash, currently accessed through the MX25L128-compatible driver path.
+- Storage: Macronix MX25L128-class 16 MB SPI flash.
 - Comms: TJA1051 CAN transceiver.
 - Power: common Ogma 5 V to 3.8 V preregulator to 3.3 V LDO pattern.
 
@@ -62,6 +62,8 @@ Ogma Console can:
 - Croi emits mission-bound, sequenced Pleasc arm/fire commands only in active flight states. Drogue fires on entry to `DROGUE`; main fires on entry to `MAIN` after the configured altitude and minimum delay conditions. Fire commands retry at a bounded rate until Pleasc confirms the channel fired.
 - Pleasc status/acknowledgements are logged into version-2 secondary flash records, including mission tag, sequence, channel, result, fault, continuity, and fired masks.
 - Croi mission config is compiled into the flight image and reported back with magic/schema/CRC over `croi_status`.
+- Mission schema 5 seals the recovery fallback and blackbox policy into that CRC. The guarded main fallback requires elapsed time after apogee, descent speed, an altitude window, and consecutive samples.
+- Ogma Console replay compiles and executes the same `FlightPhaseLogic` and `AirbrakeLogic` headers used by this image.
 - Hardware watchdog supervision is enabled after FSM, CAN, and logger tasks all report healthy progress.
 - Pyro configuration is available in Ogma Console. Live firing still requires the explicit Pleasc Rev1 accepted-risk image and an external RBF/pyro-power disconnect.
 

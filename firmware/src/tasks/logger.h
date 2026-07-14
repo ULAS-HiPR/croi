@@ -8,11 +8,12 @@
 #include <cstdio>
 
 #include <data.h>
+#include <croi_mission_config.h>
 #include <Flash/FlashLogger.h>
 #include <Flash/flash.h>
 
-#define LOGGER_DELAY_MS 100
-#define LOGGER_POST_LANDING_MS 60000U
+#define LOGGER_DELAY_MS CROI_LOGGING_FLIGHT_SAMPLE_PERIOD_MS
+#define LOGGER_POST_LANDING_MS CROI_LOGGING_POST_LANDING_MS
 #define LOGGER_FLASH_START_ADDRESS 0x00000000U
 #define LOGGER_FLASH_LENGTH 0x01000000U
 

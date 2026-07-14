@@ -3,7 +3,7 @@
 #include <cstdint>
 
 constexpr uint32_t CROI_STATUS_MAGIC = 0x43524F49U; // CROI
-constexpr uint32_t CROI_STATUS_VERSION = 10U;
+constexpr uint32_t CROI_STATUS_VERSION = 11U;
 
 extern "C" {
 
@@ -87,9 +87,10 @@ struct CroiStatus {
     uint32_t pyro_fired_mask;
     uint32_t pyro_critical_tx_drops;
     uint32_t logger_startup_samples_skipped;
+    uint32_t main_fallback_triggered;
 };
 
-static_assert(sizeof(CroiStatus) == 316U, "CroiStatus wire contract changed");
+static_assert(sizeof(CroiStatus) == 320U, "CroiStatus wire contract changed");
 
 extern volatile CroiStatus croi_status;
 

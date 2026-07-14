@@ -17,7 +17,7 @@
 #include "platform/stm_f0.h"
 #endif
 
-#define FSM_DELAY_MS 100
+#define FSM_DELAY_MS CROI_LOGGING_FLIGHT_SAMPLE_PERIOD_MS
 
 namespace task{
 class StateMachine {

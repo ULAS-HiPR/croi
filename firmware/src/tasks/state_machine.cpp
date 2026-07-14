@@ -31,7 +31,18 @@ namespace task{
 StateMachine::StateMachine(IMU *imu, Baro *baro, const flash_internal_data* settings, osMessageQueueId_t can_queue, osMessageQueueId_t logger_queue)
     : imu_(imu), baro_(baro), main_height(settings->main_height_m), drogue_delay_ms(settings->drogue_delay_ms),
       liftoff_threshold_m_s2(static_cast<float>(settings->liftoff_accel_m_s2_x100) / 100.0f),
-      phase_logic_(liftoff_threshold_m_s2, static_cast<float>(main_height), drogue_delay_ms),
+      phase_logic_(
+          liftoff_threshold_m_s2,
+          static_cast<float>(main_height),
+          drogue_delay_ms,
+          MainRecoveryFallback{
+              CROI_MISSION_MAIN_BACKUP_ENABLED != 0U,
+              CROI_MISSION_MAIN_BACKUP_AFTER_APOGEE_MS,
+              static_cast<float>(CROI_MISSION_MAIN_BACKUP_DESCENT_SPEED_M_S_X100) / 100.0f,
+              static_cast<float>(CROI_MISSION_MAIN_BACKUP_MIN_ALTITUDE_M),
+              static_cast<float>(CROI_MISSION_MAIN_BACKUP_MAX_ALTITUDE_M),
+              CROI_MISSION_MAIN_BACKUP_REQUIRED_SAMPLES,
+          }),
       can_queue_(can_queue), logger_queue_(logger_queue), taskHandle_(nullptr)
 {
     // Initialize the state machine with function pointer array
@@ -152,6 +163,9 @@ void StateMachine::update_state(const prediction_data& prediction)
             prediction.velocity,
             prediction.altitude,
             HAL_GetTick() - croi_status.state_entry_ms);
+        if (phase_logic_.main_backup_triggered()) {
+            croi_status.main_fallback_triggered = 1U;
+        }
         change_state(next);
         break;
     }

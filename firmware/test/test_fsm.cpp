@@ -65,6 +65,52 @@ void test_phase_logic_honors_drogue_delay_and_main_altitude() {
     TEST_ASSERT_EQUAL(State::MAIN, logic.update(State::DROUGE, 0.0f, -5.0f, 150.0f, 1700U));
 }
 
+void test_main_backup_requires_every_guard_consecutively() {
+    FlightPhaseLogic logic(
+        20.0f,
+        200.0f,
+        0U,
+        MainRecoveryFallback{true, 5000U, 30.0f, 100.0f, 2000.0f, 5U});
+
+    for (int sample = 0; sample < 8; ++sample) {
+        TEST_ASSERT_EQUAL(
+            State::DROUGE,
+            logic.update(State::DROUGE, 0.0f, -40.0f, 1000.0f, 4999U));
+    }
+    for (int sample = 0; sample < 4; ++sample) {
+        TEST_ASSERT_EQUAL(
+            State::DROUGE,
+            logic.update(State::DROUGE, 0.0f, -40.0f, 1000.0f, 5000U));
+    }
+    TEST_ASSERT_EQUAL(
+        State::DROUGE,
+        logic.update(State::DROUGE, 0.0f, -10.0f, 1000.0f, 5500U));
+    for (int sample = 0; sample < 4; ++sample) {
+        TEST_ASSERT_EQUAL(
+            State::DROUGE,
+            logic.update(State::DROUGE, 0.0f, -40.0f, 1000.0f, 5600U));
+    }
+    TEST_ASSERT_EQUAL(
+        State::MAIN,
+        logic.update(State::DROUGE, 0.0f, -40.0f, 1000.0f, 6000U));
+    TEST_ASSERT_TRUE(logic.main_backup_triggered());
+}
+
+void test_main_backup_rejects_altitude_outside_window() {
+    FlightPhaseLogic logic(
+        20.0f,
+        200.0f,
+        0U,
+        MainRecoveryFallback{true, 5000U, 30.0f, 100.0f, 2000.0f, 3U});
+
+    for (int sample = 0; sample < 10; ++sample) {
+        TEST_ASSERT_EQUAL(
+            State::DROUGE,
+            logic.update(State::DROUGE, 0.0f, -80.0f, 2500.0f, 6000U));
+    }
+    TEST_ASSERT_FALSE(logic.main_backup_triggered());
+}
+
 void test_phase_logic_requires_five_seconds_of_landed_samples() {
     FlightPhaseLogic logic(20.0f, 200.0f, 0U);
     for (int sample = 0; sample < 49; ++sample) {
@@ -128,6 +174,8 @@ int main() {
     RUN_TEST(test_phase_logic_requires_consecutive_samples);
     RUN_TEST(test_phase_logic_rejects_wrong_direction_liftoff_shock);
     RUN_TEST(test_phase_logic_honors_drogue_delay_and_main_altitude);
+    RUN_TEST(test_main_backup_requires_every_guard_consecutively);
+    RUN_TEST(test_main_backup_rejects_altitude_outside_window);
     RUN_TEST(test_phase_logic_requires_five_seconds_of_landed_samples);
     RUN_TEST(test_airbrake_logic_is_fail_closed_when_disabled);
     RUN_TEST(test_airbrake_logic_renews_retracted_then_deploys);
