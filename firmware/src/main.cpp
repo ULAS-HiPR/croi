@@ -14,7 +14,7 @@
 #include <data.h>
 
 #include "tasks/state_machine.h"
-#include "tasks/CAN_task.h"
+#include "tasks/can_task.h"
 #include "tasks/logger.h"
 #include "tasks/watchdog_task.h"
 #include "croi_status.h"
