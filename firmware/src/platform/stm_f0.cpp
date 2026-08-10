@@ -50,7 +50,7 @@ void MX_CAN_Init(void)
   hcan.Init.TimeSeg1 = CAN_BS1_13TQ;
   hcan.Init.TimeSeg2 = CAN_BS2_2TQ;
   hcan.Init.TimeTriggeredMode = DISABLE;
-  hcan.Init.AutoBusOff = DISABLE;
+  hcan.Init.AutoBusOff = ENABLE;
   hcan.Init.AutoWakeUp = DISABLE;
   hcan.Init.AutoRetransmission = ENABLE;
   hcan.Init.ReceiveFifoLocked = DISABLE;
@@ -328,5 +328,4 @@ void MX_TIM3_Init(void)
         __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, 0);
     }
 }
-
 #endif // F0

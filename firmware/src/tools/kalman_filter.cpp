@@ -50,7 +50,7 @@ void KalmanFilter::update(float baro_alt,
         calib_count_++;
     }
 
-    accel_buf_ = IMU_AXIS_SIGN * raw_accel_axis * imu_scale_ * 9.81f;
+    accel_buf_ = raw_accel_axis;
 
     const float y = baro_alt - (H[0]*x[0] + H[1]*x[1] + H[2]*x[2]);
     const float S = P[0][0] + R_scalar_;

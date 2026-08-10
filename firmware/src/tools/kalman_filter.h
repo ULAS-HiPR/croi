@@ -21,7 +21,7 @@ public:
     void update_values(prediction_data* data) {
         data->altitude     = x[0];
         data->velocity     = x[1];
-        data->acceleration = accel_buf_ - x[2] - 9.81f;
+        data->acceleration = accel_buf_ - x[2];
     }
 
     void set_phase_ready()        { R_scalar_ = R_COAST;  }
